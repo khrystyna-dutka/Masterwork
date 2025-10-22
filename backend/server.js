@@ -20,13 +20,18 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Логування запитів
-app.use(morgan('dev'));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
 // Парсинг JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Базовий маршрут для перевірки роботи API
+// Імпорт маршрутів
+const authRoutes = require('./routes/authRoutes');
+
+// Базовий маршрут
 app.get('/', (req, res) => {
   res.json({
     success: true,
@@ -36,7 +41,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Health check endpoint
+// Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -45,7 +50,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Обробка 404 помилок
+// API маршрути
+app.use('/api/auth', authRoutes);
+
+// Обробка 404
 app.use((req, res) => {
   res.status(404).json({
     success: false,
