@@ -1,9 +1,10 @@
 // src/pages/ProfilePage.jsx
 
 import React, { useState, useEffect } from 'react';
-import { User, Bell, Settings, MapPin, Save, LogOut, Mail, Phone } from 'lucide-react';
+import { User, Bell, Settings, MapPin, Save, LogOut, Mail, Phone, Lock, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getAQIStatus } from '../utils/helpers';
+import ChangePassword from '../components/ChangePassword';
 
 const ProfilePage = ({ setCurrentPage, districts }) => {
   const { user, logout, updateProfile } = useAuth();
@@ -17,9 +18,18 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
       telegram: false
     }
   });
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [subscribedDistricts, setSubscribedDistricts] = useState([]);
+
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handlePasswordChanged = () => {
+    setSuccessMessage('Пароль успішно змінено!');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
 
   // Завантажуємо дані користувача
   useEffect(() => {
@@ -194,6 +204,45 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
           </div>
         </div>
 
+        {/* Повідомлення про успіх */}
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-100 text-green-800 border border-green-300 rounded-lg flex items-center gap-2">
+            <Check size={20} />
+            {successMessage}
+          </div>
+        )}
+
+        {/* Зміна пароля */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Lock className="text-gray-600" size={20} />
+            Безпека
+          </h2>
+          
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <div className="font-semibold text-gray-800">Пароль</div>
+              <div className="text-sm text-gray-600">
+                {user.password_changed_at 
+                  ? `Останнє оновлення: ${new Date(user.password_changed_at).toLocaleDateString('uk-UA', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}`
+                  : 'Пароль не змінювався'
+                }
+              </div>
+            </div>
+            <button
+              onClick={() => setShowChangePassword(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+            >
+              <Lock size={16} />
+              Змінити пароль
+            </button>
+          </div>
+        </div>
+
         {/* Налаштування сповіщень */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -340,6 +389,13 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
           </button>
         </div>
       </div>
+      {/* Модальне вікно зміни пароля */}
+      {showChangePassword && (
+        <ChangePassword
+          onClose={() => setShowChangePassword(false)}
+          onSuccess={handlePasswordChanged}
+        />
+      )}
     </div>
   );
 };

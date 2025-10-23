@@ -140,8 +140,8 @@ const getProfile = async (req, res) => {
   try {
     const result = await query(
       `SELECT id, email, full_name, phone, avatar_url, role, is_verified, 
-              notification_preferences, created_at, last_login 
-       FROM users WHERE id = $1`,
+              notification_preferences, created_at, last_login, updated_at, password_changed_at
+      FROM users WHERE id = $1`,
       [req.user.id]
     );
 
@@ -269,7 +269,7 @@ const changePassword = async (req, res) => {
 
     // Оновлення пароля
     await query(
-      'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      'UPDATE users SET password_hash = $1, password_changed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       [newPasswordHash, req.user.id]
     );
 
