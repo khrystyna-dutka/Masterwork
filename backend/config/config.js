@@ -20,7 +20,7 @@ module.exports = {
     credentials: true
   },
 
-  // Налаштування бази даних (буде додано пізніше)
+  // Налаштування бази даних
   database: {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
@@ -36,12 +36,12 @@ module.exports = {
 
   // Налаштування районів Львова
   districts: [
-    { id: 1, name: 'Галицький', lat: 49.8397, lng: 24.0297 },
-    { id: 2, name: 'Залізничний', lat: 49.8326, lng: 23.9934 },
-    { id: 3, name: 'Личаківський', lat: 49.8258, lng: 24.0614 },
-    { id: 4, name: 'Сихівський', lat: 49.8044, lng: 23.9869 },
-    { id: 5, name: 'Франківський', lat: 49.8083, lng: 24.0181 },
-    { id: 6, name: 'Шевченківський', lat: 49.8550, lng: 24.0050 }
+    { id: 1, name: 'Галицький', latitude: 49.8403, longitude: 24.0323 },
+    { id: 2, name: 'Франківський', latitude: 49.8176, longitude: 23.9888 },
+    { id: 3, name: 'Залізничний', latitude: 49.8356, longitude: 23.9305 },
+    { id: 4, name: 'Шевченківський', latitude: 49.8662, longitude: 24.0348 },
+    { id: 5, name: 'Личаківський', latitude: 49.8193, longitude: 24.0684 },
+    { id: 6, name: 'Сихівський', latitude: 49.8107, longitude: 24.0457 }
   ],
 
   // Пороги для якості повітря (AQI)

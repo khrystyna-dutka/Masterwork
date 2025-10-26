@@ -47,14 +47,13 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Імпорт маршрутів - ВАЖЛИВО: робимо це ПІСЛЯ базових маршрутів
+// Імпорт маршрутів
 try {
   const authRoutes = require('./routes/authRoutes');
   app.use('/api/auth', authRoutes);
   console.log('✅ Auth routes підключено');
 } catch (error) {
-  console.error('❌ Помилка підключення auth routes:');
-  console.error(error); // Повна помилка зі стеком
+  console.error('❌ Помилка підключення auth routes:', error.message);
 }
 
 try {
@@ -63,6 +62,99 @@ try {
   console.log('✅ Air Quality routes підключено');
 } catch (error) {
   console.error('❌ Помилка підключення air-quality routes:', error.message);
+}
+
+try {
+  const subscriptionsRoutes = require('./routes/subscriptionsRoutes');
+  app.use('/api/subscriptions', subscriptionsRoutes);
+  console.log('✅ Subscriptions routes підключено');
+} catch (error) {
+  console.error('❌ Помилка підключення subscriptions routes:', error.message);
+}
+
+// ========================================
+// ТЕСТОВІ ENDPOINTS (тільки для development)
+// ========================================
+if (process.env.NODE_ENV === 'development') {
+  // Ручний збір даних про якість повітря
+  app.post('/api/test/collect-data', async (req, res) => {
+    try {
+      const airQualityHistoryService = require('./services/airQualityHistoryService');
+      console.log('🧪 Тестовий збір даних...');
+      const result = await airQualityHistoryService.saveCurrentDataToHistory();
+      res.json({ 
+        success: true, 
+        message: 'Дані успішно зібрано',
+        result 
+      });
+    } catch (error) {
+      console.error('Помилка тестового збору:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  });
+
+  // Перевірка OpenWeather API
+  app.get('/api/test/weather/:lat/:lon', async (req, res) => {
+    try {
+      const airQualityService = require('./services/airQualityService');
+      const { lat, lon } = req.params;
+      
+      console.log(`🧪 Тест OpenWeather для [${lat}, ${lon}]...`);
+      
+      const weatherData = await airQualityService.getWeatherData(parseFloat(lat), parseFloat(lon));
+      const airQualityData = await airQualityService.getOpenWeatherAirQuality(parseFloat(lat), parseFloat(lon));
+      
+      res.json({ 
+        success: true,
+        weather: weatherData,
+        airQuality: airQualityData
+      });
+    } catch (error) {
+      console.error('Помилка тесту:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  });
+
+  // Тестова відправка email
+  app.post('/api/test/send-daily-emails', async (req, res) => {
+    try {
+      const { protect } = require('./middleware/auth');
+      
+      // Перевірка аутентифікації
+      await new Promise((resolve, reject) => {
+        protect(req, res, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      const { triggerTestEmail } = require('./services/cronJobs');
+      const result = await triggerTestEmail();
+      
+      res.json({ 
+        success: true, 
+        message: 'Тестова відправка email завершена',
+        result 
+      });
+    } catch (error) {
+      console.error('Помилка тестової відправки:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  });
+
+  console.log('✅ Тестові endpoints підключено:');
+  console.log('   POST /api/test/collect-data');
+  console.log('   GET /api/test/weather/:lat/:lon');
+  console.log('   POST /api/test/send-daily-emails');
 }
 
 // Обробка 404
@@ -96,10 +188,41 @@ app.listen(PORT, () => {
   console.log(`🔗 URL: http://localhost:${PORT}`);
   console.log(`⏰ Час запуску: ${new Date().toLocaleString('uk-UA')}`);
   console.log('='.repeat(50));
+  
+  // Запуск schedulers
+  try {
+    // Scheduler для збору даних про якість повітря
+    const airQualityScheduler = require('./jobs/airQualityScheduler');
+    airQualityScheduler.start();
+    console.log('✅ Air Quality Scheduler запущено');
+  } catch (error) {
+    console.error('⚠️ Air Quality Scheduler не запущено:', error.message);
+  }
+
+  // Scheduler для щоденних email сповіщень
+  if (process.env.NODE_ENV !== 'test') {
+    try {
+      const { startDailyEmailCron } = require('./services/cronJobs');
+      startDailyEmailCron();
+      console.log('✅ Daily Email Scheduler запущено');
+    } catch (error) {
+      console.error('⚠️ Daily Email Scheduler не запущено:', error.message);
+      console.error('   Можливо, не налаштовано email конфігурацію в .env');
+    }
+  }
+  
+  console.log('='.repeat(50));
 });
 
-// Запуск scheduler для збору даних
-const airQualityScheduler = require('./jobs/airQualityScheduler');
-airQualityScheduler.start();
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('👋 SIGTERM отримано. Закриваю сервер...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('👋 SIGINT отримано. Закриваю сервер...');
+  process.exit(0);
+});
 
 module.exports = app;

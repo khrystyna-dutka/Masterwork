@@ -20,6 +20,7 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [subscribedDistricts, setSubscribedDistricts] = useState([]);
 
@@ -43,6 +44,39 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
           telegram: false
         }
       });
+    }
+  }, [user]);
+
+  // Завантаження підписок при завантаженні компонента
+  useEffect(() => {
+    const loadSubscriptions = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setLoadingSubscriptions(false);
+          return;
+        }
+
+        const response = await fetch('http://localhost:5000/api/subscriptions', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const districtIds = data.data.subscriptions.map(sub => sub.district_id);
+          setSubscribedDistricts(districtIds);
+        }
+      } catch (error) {
+        console.error('Помилка завантаження підписок:', error);
+      } finally {
+        setLoadingSubscriptions(false);
+      }
+    };
+
+    if (user) {
+      loadSubscriptions();
     }
   }, [user]);
 
@@ -76,15 +110,66 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
     setLoading(true);
     setMessage({ type: '', text: '' });
 
-    const result = await updateProfile(formData);
+    try {
+      const token = localStorage.getItem('token');
 
-    setLoading(false);
+      // Оновлюємо профіль
+      const profileResult = await updateProfile(formData);
 
-    if (result.success) {
-      setMessage({ type: 'success', text: 'Профіль успішно оновлено!' });
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-    } else {
-      setMessage({ type: 'error', text: result.message || 'Помилка при оновленні профілю' });
+      if (!profileResult.success) {
+        setMessage({ type: 'error', text: profileResult.message || 'Помилка при оновленні профілю' });
+        setLoading(false);
+        return;
+      }
+
+      // Оновлюємо підписки на райони
+      const subscriptionsResponse = await fetch('http://localhost:5000/api/subscriptions', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          district_ids: subscribedDistricts,
+          notify_daily_summary: true,
+          notify_on_high_pollution: true,
+          send_test_email: true // Завжди відправляти тестовий email
+        })
+      });
+
+      if (!subscriptionsResponse.ok) {
+        setMessage({ type: 'error', text: 'Помилка при оновленні підписок' });
+        setLoading(false);
+        return;
+      }
+
+      const subscriptionsData = await subscriptionsResponse.json();
+
+      // Перевіряємо чи був відправлений email
+      if (subscriptionsData.emailSent) {
+        setMessage({ 
+          type: 'success', 
+          text: `✅ Профіль та підписки успішно оновлено! 📧 Тестове email відправлено на ${user.email}` 
+        });
+      } else if (subscribedDistricts.length > 0) {
+        setMessage({ 
+          type: 'success', 
+          text: '✅ Профіль та підписки успішно оновлено! Email сповіщення будуть надходити щодня о 8:00 ранку.' 
+        });
+      } else {
+        setMessage({ 
+          type: 'success', 
+          text: '✅ Профіль успішно оновлено!' 
+        });
+      }
+      
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+
+    } catch (error) {
+      console.error('Помилка збереження:', error);
+      setMessage({ type: 'error', text: 'Помилка при збереженні даних' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -118,6 +203,13 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
           <User className="text-blue-600" />
           Профіль користувача
         </h1>
+
+        {/* Повідомлення про успішну зміну пароля */}
+        {successMessage && (
+          <div className="mb-6 p-4 rounded-lg bg-green-100 text-green-800 border border-green-300">
+            {successMessage}
+          </div>
+        )}
 
         {/* Повідомлення */}
         {message.text && (
@@ -183,6 +275,16 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
             </div>
 
             <div className="pt-4 border-t">
+              <button
+                onClick={() => setShowChangePassword(true)}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+              >
+                <Lock size={16} />
+                Змінити пароль
+              </button>
+            </div>
+
+            <div className="pt-4 border-t">
               <div className="text-sm text-gray-600 space-y-1">
                 <p><strong>Роль:</strong> {user.role === 'admin' ? 'Адміністратор' : 'Користувач'}</p>
                 {user.created_at && !isNaN(new Date(user.created_at)) && (
@@ -194,9 +296,12 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
                 <p>
                   <strong>Статус:</strong>{' '}
                   {user.is_verified ? (
-                    <span className="text-green-600">✓ Верифікований</span>
+                    <span className="text-green-600 flex items-center gap-1 inline-flex">
+                      <Check size={16} />
+                      Підтверджено
+                    </span>
                   ) : (
-                    <span className="text-orange-600">Не верифікований</span>
+                    <span className="text-orange-600">Не підтверджено</span>
                   )}
                 </p>
               </div>
@@ -204,57 +309,18 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
           </div>
         </div>
 
-        {/* Повідомлення про успіх */}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-100 text-green-800 border border-green-300 rounded-lg flex items-center gap-2">
-            <Check size={20} />
-            {successMessage}
-          </div>
-        )}
-
-        {/* Зміна пароля */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Lock className="text-gray-600" size={20} />
-            Безпека
-          </h2>
-          
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <div className="font-semibold text-gray-800">Пароль</div>
-              <div className="text-sm text-gray-600">
-                {user.password_changed_at 
-                  ? `Останнє оновлення: ${new Date(user.password_changed_at).toLocaleDateString('uk-UA', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}`
-                  : 'Пароль не змінювався'
-                }
-              </div>
-            </div>
-            <button
-              onClick={() => setShowChangePassword(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-            >
-              <Lock size={16} />
-              Змінити пароль
-            </button>
-          </div>
-        </div>
-
         {/* Налаштування сповіщень */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Bell className="text-blue-600" size={20} />
+            <Bell className="text-gray-600" size={20} />
             Налаштування сповіщень
           </h2>
-          
-          <div className="space-y-4">
+
+          <div className="space-y-3">
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex-1">
                 <div className="font-semibold text-gray-800">Email сповіщення</div>
-                <div className="text-sm text-gray-600">Отримувати щоденні звіти на пошту</div>
+                <div className="text-sm text-gray-600">Щоденні звіти про якість повітря</div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -286,7 +352,7 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex-1">
                 <div className="font-semibold text-gray-800">Telegram бот</div>
-                <div className="text-sm text-gray-600">Миттєві сповіщення у Telegram</div>
+                <div className="text-sm text-gray-600">Сповіщення у Telegram</div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -304,59 +370,59 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
         {/* Підписки на райони */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <MapPin className="text-green-600" size={20} />
-            Мої райони
+            <MapPin className="text-gray-600" size={20} />
+            Підписки на райони для email сповіщень
           </h2>
-          
-          <p className="text-gray-600 mb-4">
-            Оберіть райони, за якими ви хочете отримувати сповіщення про якість повітря
+
+          <p className="text-sm text-gray-600 mb-4">
+            Оберіть райони, для яких ви хочете отримувати щоденні email сповіщення про стан повітря
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {districts.map(district => {
-              const isSubscribed = subscribedDistricts.includes(district.id);
-              const status = getAQIStatus(district.baseAQI);
-              
-              return (
-                <div
-                  key={district.id}
-                  onClick={() => toggleDistrictSubscription(district.id)}
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition ${
-                    isSubscribed 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800">{district.name}</h3>
-                      <div className="mt-2 flex items-center gap-2">
-                        <span 
-                          className="px-2 py-1 rounded text-xs font-semibold"
-                          style={{ 
-                            backgroundColor: status.color + '20',
-                            color: status.color
-                          }}
-                        >
-                          AQI: {district.baseAQI}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {status.label}
-                        </span>
+          {loadingSubscriptions ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-sm text-gray-600 mt-2">Завантаження підписок...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {districts.map((district) => {
+                const isSubscribed = subscribedDistricts.includes(district.id);
+                const status = getAQIStatus(district.aqi);
+
+                return (
+                  <div
+                    key={district.id}
+                    onClick={() => toggleDistrictSubscription(district.id)}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      isSubscribed
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-800">{district.name}</div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          AQI: <span style={{ color: status.color }} className="font-bold">
+                            {district.aqi}
+                          </span> - {status.label}
+                        </div>
+                      </div>
+                      <div
+                        className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
+                          isSubscribed
+                            ? 'bg-blue-600 border-blue-600'
+                            : 'border-gray-300'
+                        }`}
+                      >
+                        {isSubscribed && <span className="text-white text-sm font-bold">✓</span>}
                       </div>
                     </div>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      isSubscribed 
-                        ? 'bg-blue-600 border-blue-600' 
-                        : 'border-gray-300'
-                    }`}>
-                      {isSubscribed && <span className="text-white text-sm font-bold">✓</span>}
-                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between text-sm">
@@ -364,7 +430,7 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
                 Вибрано районів: <strong>{subscribedDistricts.length}</strong> з {districts.length}
               </span>
               {subscribedDistricts.length === 0 && (
-                <span className="text-orange-600 text-xs">⚠ Оберіть хоча б один район</span>
+                <span className="text-orange-600 text-xs">⚠ Оберіть хоча б один район для email сповіщень</span>
               )}
             </div>
           </div>
@@ -389,6 +455,7 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
           </button>
         </div>
       </div>
+
       {/* Модальне вікно зміни пароля */}
       {showChangePassword && (
         <ChangePassword
