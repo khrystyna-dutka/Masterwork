@@ -5,30 +5,40 @@ import api from './api';
 class AuthService {
   async register(userData) {
     try {
-      const response = await api.post('/auth/register', userData, { skipAuth: true });
+      const response = await api.post('/auth/register', userData);
+      const data = response.data; // <-- ДОДАЙ ЦЕ
       
-      if (response.success && response.data.token) {
-        this.setToken(response.data.token);
-        this.setUser(response.data.user);
+      if (data.success && data.data.token) {
+        this.setToken(data.data.token);
+        this.setUser(data.data.user);
       }
       
-      return response;
+      return data;
     } catch (error) {
+      // Якщо є відповідь від сервера - повертаємо її
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
       throw error;
     }
   }
 
   async login(email, password) {
     try {
-      const response = await api.post('/auth/login', { email, password }, { skipAuth: true });
+      const response = await api.post('/auth/login', { email, password });
+      const data = response.data; // <-- ДОДАЙ ЦЕ
       
-      if (response.success && response.data.token) {
-        this.setToken(response.data.token);
-        this.setUser(response.data.user);
+      if (data.success && data.data.token) {
+        this.setToken(data.data.token);
+        this.setUser(data.data.user);
       }
       
-      return response;
+      return data;
     } catch (error) {
+      // Якщо є відповідь від сервера (401, 400, etc) - повертаємо її
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
       throw error;
     }
   }
@@ -36,13 +46,17 @@ class AuthService {
   async getProfile() {
     try {
       const response = await api.get('/auth/profile');
+      const data = response.data;
       
-      if (response.success && response.data.user) {
-        this.setUser(response.data.user);
+      if (data.success && data.data.user) {
+        this.setUser(data.data.user);
       }
       
-      return response;
+      return data;
     } catch (error) {
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
       throw error;
     }
   }
@@ -50,24 +64,32 @@ class AuthService {
   async updateProfile(userData) {
     try {
       const response = await api.put('/auth/profile', userData);
+      const data = response.data;
       
-      if (response.success && response.data.user) {
-        this.setUser(response.data.user);
+      if (data.success && data.data.user) {
+        this.setUser(data.data.user);
       }
       
-      return response;
+      return data;
     } catch (error) {
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
       throw error;
     }
   }
 
   async changePassword(currentPassword, newPassword) {
     try {
-      return await api.put('/auth/change-password', {
+      const response = await api.put('/auth/change-password', {
         currentPassword,
         newPassword,
       });
+      return response.data;
     } catch (error) {
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
       throw error;
     }
   }

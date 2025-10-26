@@ -1,62 +1,46 @@
-// src/services/api.js
+// ecolviv-app/src/services/api.js
+import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
-class ApiService {
-  async request(endpoint, options = {}) {
-    const url = `${API_URL}${endpoint}`;
-    const token = localStorage.getItem('token');
-
-    const config = {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    };
-
-    if (token && !options.skipAuth) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Щось пішло не так');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json'
   }
+});
 
-  get(endpoint, options) {
-    return this.request(endpoint, { ...options, method: 'GET' });
+// Додати токен до кожного запиту, якщо він є
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
 
-  post(endpoint, body, options) {
-    return this.request(endpoint, {
-      ...options,
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
+// Обробка відповідей
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
   }
+);
 
-  put(endpoint, body, options) {
-    return this.request(endpoint, {
-      ...options,
-      method: 'PUT',
-      body: JSON.stringify(body),
-    });
-  }
+// Air Quality API
+export const airQualityAPI = {
+  getDistricts: () => api.get('/air-quality/districts'),
+  getCurrentAirQuality: () => api.get('/air-quality/current'),
+  getDistrictAirQuality: (districtId) => api.get(`/air-quality/district/${districtId}`)
+};
 
-  delete(endpoint, options) {
-    return this.request(endpoint, { ...options, method: 'DELETE' });
-  }
-}
+// Auth API
+export const authAPI = {
+  register: (userData) => api.post('/auth/register', userData),
+  login: (credentials) => api.post('/auth/login', credentials),
+  getProfile: () => api.get('/auth/profile'),
+  updateProfile: (userData) => api.put('/auth/profile', userData)
+};
 
-export default new ApiService();
+export default api;

@@ -28,9 +28,6 @@ if (process.env.NODE_ENV === 'development') {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Імпорт маршрутів
-const authRoutes = require('./routes/authRoutes');
-
 // Базовий маршрут
 app.get('/', (req, res) => {
   res.json({
@@ -50,14 +47,30 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API маршрути
-app.use('/api/auth', authRoutes);
+// Імпорт маршрутів - ВАЖЛИВО: робимо це ПІСЛЯ базових маршрутів
+try {
+  const authRoutes = require('./routes/authRoutes');
+  app.use('/api/auth', authRoutes);
+  console.log('✅ Auth routes підключено');
+} catch (error) {
+  console.error('❌ Помилка підключення auth routes:');
+  console.error(error); // Повна помилка зі стеком
+}
+
+try {
+  const airQualityRoutes = require('./routes/airQualityRoutes');
+  app.use('/api/air-quality', airQualityRoutes);
+  console.log('✅ Air Quality routes підключено');
+} catch (error) {
+  console.error('❌ Помилка підключення air-quality routes:', error.message);
+}
 
 // Обробка 404
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Маршрут не знайдено'
+    message: 'Маршрут не знайдено',
+    path: req.path
   });
 });
 
