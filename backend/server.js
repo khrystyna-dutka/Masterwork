@@ -98,4 +98,8 @@ app.listen(PORT, () => {
   console.log('='.repeat(50));
 });
 
+// Запуск scheduler для збору даних
+const airQualityScheduler = require('./jobs/airQualityScheduler');
+airQualityScheduler.start();
+
 module.exports = app;

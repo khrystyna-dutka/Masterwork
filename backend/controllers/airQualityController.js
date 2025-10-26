@@ -79,3 +79,33 @@ exports.getDistricts = async (req, res) => {
     });
   }
 };
+
+/**
+ * Отримати історію даних для району
+ */
+exports.getDistrictHistory = async (req, res) => {
+  try {
+    const { districtId } = req.params;
+    const { period = '24h' } = req.query;
+    
+    const historyService = require('../services/airQualityHistoryService');
+    const history = await historyService.getDistrictHistory(parseInt(districtId), period);
+    const stats = await historyService.getDistrictStats(parseInt(districtId), period);
+    
+    res.json({
+      success: true,
+      districtId: parseInt(districtId),
+      period,
+      count: history.length,
+      data: history,
+      stats
+    });
+  } catch (error) {
+    console.error('Error in getDistrictHistory:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Не вдалося отримати історію даних',
+      error: error.message
+    });
+  }
+};

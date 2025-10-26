@@ -32,7 +32,10 @@ api.interceptors.response.use(
 export const airQualityAPI = {
   getDistricts: () => api.get('/air-quality/districts'),
   getCurrentAirQuality: () => api.get('/air-quality/current'),
-  getDistrictAirQuality: (districtId) => api.get(`/air-quality/district/${districtId}`)
+  getDistrictAirQuality: (districtId) => api.get(`/air-quality/district/${districtId}`),
+  getSaveEcoBotStations: () => api.get('/air-quality/stations/saveecobot'),
+  getDistrictHistory: (districtId, period = '24h') => 
+    api.get(`/air-quality/district/${districtId}/history?period=${period}`)  // <-- ДОДАЙ
 };
 
 // Auth API
