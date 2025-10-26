@@ -4,9 +4,9 @@ const airQualityHistoryService = require('../services/airQualityHistoryService')
 
 class AirQualityScheduler {
   start() {
-    // Збирати дані кожну годину (0 хвилин кожної години)
-    cron.schedule('0 * * * *', async () => {
-      console.log('⏰ Запуск збору даних (кожну годину)...');
+    // Збирати дані кожні 15 хвилин
+    cron.schedule('*/15 * * * *', async () => {
+      console.log('⏰ Запуск збору даних (кожні 15 хвилин)...');
       try {
         await airQualityHistoryService.saveCurrentDataToHistory();
       } catch (error) {
@@ -25,7 +25,7 @@ class AirQualityScheduler {
     });
 
     console.log('✅ Scheduler запущено:');
-    console.log('   - Збір даних: кожну годину');
+    console.log('   - Збір даних: кожні 15 хвилин');
     console.log('   - Очищення: щодня о 3:00');
   }
 }

@@ -1,15 +1,124 @@
 // src/pages/MapPage.jsx
 
-import React from 'react';
-import { Navigation } from 'lucide-react';
+import React, { useState } from 'react';
+import { Navigation, RefreshCw } from 'lucide-react';
 import InteractiveMap from '../components/InteractiveMap';
-import { getAQIStatus } from '../utils/helpers';
 
-const MapPage = ({ districts, setCurrentPage, setSelectedDistrict }) => {
+const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }) => {
+  const [displayMode, setDisplayMode] = useState('baseAQI');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const handleDistrictClick = (district) => {
     setSelectedDistrict(district);
     setCurrentPage('monitoring');
   };
+
+  const handleRefresh = async () => {
+    if (refreshData) {
+      setIsRefreshing(true);
+      try {
+        await refreshData();
+      } catch (error) {
+        console.error('Помилка оновлення:', error);
+      } finally {
+        setIsRefreshing(false);
+      }
+    }
+  };
+
+  // Параметри для вибору
+  const parameters = [
+    { key: 'baseAQI', label: 'AQI', unit: '' },
+    { key: 'pm25', label: 'PM2.5', unit: 'μg/m³' },
+    { key: 'pm10', label: 'PM10', unit: 'μg/m³' },
+    { key: 'no2', label: 'NO₂', unit: 'μg/m³' },
+    { key: 'so2', label: 'SO₂', unit: 'μg/m³' },
+    { key: 'co', label: 'CO', unit: 'μg/m³' },
+    { key: 'o3', label: 'O₃', unit: 'μg/m³' }
+  ];
+
+  // Легенди для різних параметрів
+  const legends = {
+    baseAQI: {
+      title: 'Легенда якості повітря (AQI):',
+      levels: [
+        { color: '#10b981', range: '0-50', label: 'Добра' },
+        { color: '#f59e0b', range: '51-100', label: 'Помірна' },
+        { color: '#f97316', range: '101-150', label: 'Нездорова для чутливих' },
+        { color: '#ef4444', range: '151-200', label: 'Нездорова' },
+        { color: '#9333ea', range: '201-300', label: 'Дуже нездорова' },
+        { color: '#7f1d1d', range: '300+', label: 'Небезпечна' }
+      ]
+    },
+    pm25: {
+      title: 'Норми PM2.5 (μg/m³):',
+      levels: [
+        { color: '#10b981', range: '0-12', label: 'Добра' },
+        { color: '#f59e0b', range: '12.1-35.4', label: 'Помірна' },
+        { color: '#f97316', range: '35.5-55.4', label: 'Нездорова для чутливих' },
+        { color: '#ef4444', range: '55.5-150.4', label: 'Нездорова' },
+        { color: '#9333ea', range: '150.5-250.4', label: 'Дуже нездорова' },
+        { color: '#7f1d1d', range: '250.5+', label: 'Небезпечна' }
+      ]
+    },
+    pm10: {
+      title: 'Норми PM10 (μg/m³):',
+      levels: [
+        { color: '#10b981', range: '0-54', label: 'Добра' },
+        { color: '#f59e0b', range: '55-154', label: 'Помірна' },
+        { color: '#f97316', range: '155-254', label: 'Нездорова для чутливих' },
+        { color: '#ef4444', range: '255-354', label: 'Нездорова' },
+        { color: '#9333ea', range: '355-424', label: 'Дуже нездорова' },
+        { color: '#7f1d1d', range: '425+', label: 'Небезпечна' }
+      ]
+    },
+    no2: {
+      title: 'Норми NO₂ (μg/m³):',
+      levels: [
+        { color: '#10b981', range: '0-53', label: 'Добра' },
+        { color: '#f59e0b', range: '54-100', label: 'Помірна' },
+        { color: '#f97316', range: '101-360', label: 'Нездорова для чутливих' },
+        { color: '#ef4444', range: '361-649', label: 'Нездорова' },
+        { color: '#9333ea', range: '650-1249', label: 'Дуже нездорова' },
+        { color: '#7f1d1d', range: '1250+', label: 'Небезпечна' }
+      ]
+    },
+    so2: {
+      title: 'Норми SO₂ (μg/m³):',
+      levels: [
+        { color: '#10b981', range: '0-35', label: 'Добра' },
+        { color: '#f59e0b', range: '36-75', label: 'Помірна' },
+        { color: '#f97316', range: '76-185', label: 'Нездорова для чутливих' },
+        { color: '#ef4444', range: '186-304', label: 'Нездорова' },
+        { color: '#9333ea', range: '305-604', label: 'Дуже нездорова' },
+        { color: '#7f1d1d', range: '605+', label: 'Небезпечна' }
+      ]
+    },
+    co: {
+      title: 'Норми CO (μg/m³):',
+      levels: [
+        { color: '#10b981', range: '0-4400', label: 'Добра' },
+        { color: '#f59e0b', range: '4401-9400', label: 'Помірна' },
+        { color: '#f97316', range: '9401-12400', label: 'Нездорова для чутливих' },
+        { color: '#ef4444', range: '12401-15400', label: 'Нездорова' },
+        { color: '#9333ea', range: '15401-30400', label: 'Дуже нездорова' },
+        { color: '#7f1d1d', range: '30401+', label: 'Небезпечна' }
+      ]
+    },
+    o3: {
+      title: 'Норми O₃ (μg/m³):',
+      levels: [
+        { color: '#10b981', range: '0-54', label: 'Добра' },
+        { color: '#f59e0b', range: '55-70', label: 'Помірна' },
+        { color: '#f97316', range: '71-85', label: 'Нездорова для чутливих' },
+        { color: '#ef4444', range: '86-105', label: 'Нездорова' },
+        { color: '#9333ea', range: '106-200', label: 'Дуже нездорова' },
+        { color: '#7f1d1d', range: '201+', label: 'Небезпечна' }
+      ]
+    }
+  };
+
+  const currentLegend = legends[displayMode];
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -21,76 +130,69 @@ const MapPage = ({ districts, setCurrentPage, setSelectedDistrict }) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Карта */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 h-full">
             <div className="bg-white rounded-lg shadow-lg p-6 h-full flex items-center justify-center">
               <InteractiveMap 
                 districts={districts}
                 onDistrictClick={handleDistrictClick}
+                displayMode={displayMode}
               />
             </div>
           </div>
 
-          {/* Список районів */}
-          <div className="bg-white rounded-lg shadow-lg p-6 overflow-y-auto" style={{ maxHeight: '1200px' }}>
-            <h2 className="text-xl font-bold text-gray-800 mb-4 sticky top-0 bg-white pb-2 z-10">Райони Львова</h2>
-            <div className="space-y-3">
-              {districts.map(district => {
-                const status = getAQIStatus(district.baseAQI);
-                return (
-                  <div
-                    key={district.id}
-                    className="p-4 border-2 rounded-lg cursor-pointer hover:shadow-md transition-all"
-                    style={{ borderColor: status.color }}
-                    onClick={() => handleDistrictClick(district)}
+          {/* Панель керування */}
+          <div className="space-y-4 flex flex-col">
+            {/* Вибір параметра */}
+            <div className="bg-white rounded-lg shadow-lg p-4">
+              <h3 className="font-bold text-gray-800 mb-3">Шари:</h3>
+              <div className="space-y-2">
+                {parameters.map(param => (
+                  <button
+                    key={param.key}
+                    onClick={() => setDisplayMode(param.key)}
+                    className={`w-full p-3 rounded-lg text-left font-semibold transition ${
+                      displayMode === param.key 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-gray-800">{district.name}</div>
-                      <div className="text-2xl font-bold" style={{ color: status.color }}>
-                        {district.baseAQI}
-                      </div>
+                    <div className="flex justify-between items-center">
+                      <span>{param.label}</span>
+                      {param.unit && <span className="text-sm opacity-75">{param.unit}</span>}
                     </div>
-                    <div className={`text-sm ${status.textColor} font-semibold mb-2`}>
-                      {status.text}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                      <div>PM2.5: <span className="font-semibold">{district.pm25}</span></div>
-                      <div>PM10: <span className="font-semibold">{district.pm10}</span></div>
-                    </div>
-                  </div>
-                );
-              })}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Легенда */}
-        <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Легенда якості повітря</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="text-center p-3 bg-green-50 rounded-lg border-2 border-green-500">
-              <div className="w-full h-4 bg-green-500 rounded mb-2"></div>
-              <div className="text-sm font-semibold text-green-700">Добра</div>
-              <div className="text-xs text-gray-500">0-50 AQI</div>
-            </div>
-            <div className="text-center p-3 bg-lime-50 rounded-lg border-2 border-lime-500">
-              <div className="w-full h-4 bg-lime-500 rounded mb-2"></div>
-              <div className="text-sm font-semibold text-lime-700">Помірна</div>
-              <div className="text-xs text-gray-500">51-70 AQI</div>
-            </div>
-            <div className="text-center p-3 bg-yellow-50 rounded-lg border-2 border-yellow-500">
-              <div className="w-full h-4 bg-yellow-500 rounded mb-2"></div>
-              <div className="text-sm font-semibold text-yellow-700">Задовільна</div>
-              <div className="text-xs text-gray-500">71-90 AQI</div>
-            </div>
-            <div className="text-center p-3 bg-orange-50 rounded-lg border-2 border-orange-500">
-              <div className="w-full h-4 bg-orange-500 rounded mb-2"></div>
-              <div className="text-sm font-semibold text-orange-700">Погана</div>
-              <div className="text-xs text-gray-500">91-110 AQI</div>
-            </div>
-            <div className="text-center p-3 bg-red-50 rounded-lg border-2 border-red-500">
-              <div className="w-full h-4 bg-red-500 rounded mb-2"></div>
-              <div className="text-sm font-semibold text-red-700">Дуже погана</div>
-              <div className="text-xs text-gray-500">110+ AQI</div>
+            {/* Кнопка оновлення */}
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={`w-full p-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
+                isRefreshing 
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800'
+              }`}
+            >
+              <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+              {isRefreshing ? 'Оновлення...' : 'Оновити дані'}
+            </button>
+
+            {/* Легенда */}
+            <div className="bg-white rounded-lg shadow-lg p-4 flex-1 flex flex-col">
+              <h3 className="font-bold text-gray-800 mb-3">{currentLegend.title}</h3>
+              <div className="space-y-2 text-sm flex-1">
+                {currentLegend.levels.map((level, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <div 
+                      className="w-6 h-6 rounded flex-shrink-0" 
+                      style={{ backgroundColor: level.color }}
+                    ></div>
+                    <span>{level.range}: {level.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

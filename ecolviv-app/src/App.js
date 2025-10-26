@@ -60,6 +60,7 @@ function App() {
                 setCurrentPage={setCurrentPage}
                 setSelectedDistrict={setSelectedDistrict}
                 lastUpdate={lastUpdate}
+                refreshData={refreshData}
               />
             )}
             

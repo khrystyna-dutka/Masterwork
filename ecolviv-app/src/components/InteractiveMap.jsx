@@ -4,8 +4,25 @@ import React, { useState } from 'react';
 import { getAQIStatus } from '../utils/helpers';
 import lvivDistrictsGeoJSON from '../data/lvivDistricts.json';
 
-const InteractiveMap = ({ districts, onDistrictClick }) => {
+const InteractiveMap = ({ districts, onDistrictClick, displayMode = 'baseAQI' }) => {
   const [hoveredId, setHoveredId] = useState(null);
+
+  // Аналіз районів для виявлення аномалій
+  const analyzeDistricts = (districts) => {
+    const avgAQI = districts.reduce((sum, d) => sum + d.baseAQI, 0) / districts.length;
+    const stdDev = Math.sqrt(
+      districts.reduce((sum, d) => sum + Math.pow(d.baseAQI - avgAQI, 2), 0) / districts.length
+    );
+    
+    return {
+      average: avgAQI,
+      significantly_better: districts.filter(d => d.baseAQI < avgAQI - stdDev),
+      significantly_worse: districts.filter(d => d.baseAQI > avgAQI + stdDev),
+      problematic: districts.filter(d => d.traffic > 90 && d.trees < 30)
+    };
+  };
+
+  const analysis = analyzeDistricts(districts);
 
   // Функція для отримання bounds (межі) карти
   const getBounds = () => {
@@ -27,23 +44,14 @@ const InteractiveMap = ({ districts, onDistrictClick }) => {
 
   const bounds = getBounds();
   
-  // Зберігаємо реальні пропорції Львова
   const latRange = bounds.maxLat - bounds.minLat;
   const lngRange = bounds.maxLng - bounds.minLng;
-  
-  // Використовуємо коефіцієнт для компенсації спотворення Меркатора
-  // На широті Львова (~50°) 1° довготи ≈ 0.64 від 1° широти
   const mercatorCorrection = Math.cos(((bounds.minLat + bounds.maxLat) / 2) * Math.PI / 180);
   const correctedLngRange = lngRange * mercatorCorrection;
-  
-  // Розраховуємо реальне співвідношення сторін
   const aspectRatio = correctedLngRange / latRange;
-  
-  // Встановлюємо базову ширину і розраховуємо висоту відповідно до реальних пропорцій
   const baseWidth = 1000;
   const width = baseWidth;
   const height = baseWidth / aspectRatio;
-  
   const padding = 40;
 
   // Масштабування координат до SVG
@@ -68,6 +76,90 @@ const InteractiveMap = ({ districts, onDistrictClick }) => {
     const sumX = scaledCoords.reduce((sum, [x]) => sum + x, 0);
     const sumY = scaledCoords.reduce((sum, [, y]) => sum + y, 0);
     return [sumX / scaledCoords.length, sumY / scaledCoords.length];
+  };
+
+  // Отримати значення вибраного параметра
+  const getDisplayValue = (district) => {
+    return district[displayMode] || 0;
+  };
+
+  // Функція для форматування значення
+  const formatValue = (value, mode) => {
+    if (mode === 'baseAQI') {
+      return Math.round(value);
+    }
+    return Number(value).toFixed(2);
+  };
+
+  // Отримати статус на основі вибраного параметра - ОНОВЛЕНО!
+  const getParameterStatus = (value) => {
+    // Для AQI використовуємо стандартну функцію
+    if (displayMode === 'baseAQI') {
+      return getAQIStatus(value);
+    }
+    
+    // Для PM2.5
+    if (displayMode === 'pm25') {
+      if (value <= 12) return { color: '#10b981', text: 'Добра', textColor: 'text-green-600' };
+      if (value <= 35.4) return { color: '#f59e0b', text: 'Помірна', textColor: 'text-yellow-600' };
+      if (value <= 55.4) return { color: '#f97316', text: 'Нездорова для чутливих', textColor: 'text-orange-600' };
+      if (value <= 150.4) return { color: '#ef4444', text: 'Нездорова', textColor: 'text-red-600' };
+      if (value <= 250.4) return { color: '#9333ea', text: 'Дуже нездорова', textColor: 'text-purple-600' };
+      return { color: '#7f1d1d', text: 'Небезпечна', textColor: 'text-red-900' };
+    }
+    
+    // Для PM10
+    if (displayMode === 'pm10') {
+      if (value <= 54) return { color: '#10b981', text: 'Добра', textColor: 'text-green-600' };
+      if (value <= 154) return { color: '#f59e0b', text: 'Помірна', textColor: 'text-yellow-600' };
+      if (value <= 254) return { color: '#f97316', text: 'Нездорова для чутливих', textColor: 'text-orange-600' };
+      if (value <= 354) return { color: '#ef4444', text: 'Нездорова', textColor: 'text-red-600' };
+      if (value <= 424) return { color: '#9333ea', text: 'Дуже нездорова', textColor: 'text-purple-600' };
+      return { color: '#7f1d1d', text: 'Небезпечна', textColor: 'text-red-900' };
+    }
+    
+    // Для NO2
+    if (displayMode === 'no2') {
+      if (value <= 53) return { color: '#10b981', text: 'Добра', textColor: 'text-green-600' };
+      if (value <= 100) return { color: '#f59e0b', text: 'Помірна', textColor: 'text-yellow-600' };
+      if (value <= 360) return { color: '#f97316', text: 'Нездорова для чутливих', textColor: 'text-orange-600' };
+      if (value <= 649) return { color: '#ef4444', text: 'Нездорова', textColor: 'text-red-600' };
+      if (value <= 1249) return { color: '#9333ea', text: 'Дуже нездорова', textColor: 'text-purple-600' };
+      return { color: '#7f1d1d', text: 'Небезпечна', textColor: 'text-red-900' };
+    }
+    
+    // Для SO2
+    if (displayMode === 'so2') {
+      if (value <= 35) return { color: '#10b981', text: 'Добра', textColor: 'text-green-600' };
+      if (value <= 75) return { color: '#f59e0b', text: 'Помірна', textColor: 'text-yellow-600' };
+      if (value <= 185) return { color: '#f97316', text: 'Нездорова для чутливих', textColor: 'text-orange-600' };
+      if (value <= 304) return { color: '#ef4444', text: 'Нездорова', textColor: 'text-red-600' };
+      if (value <= 604) return { color: '#9333ea', text: 'Дуже нездорова', textColor: 'text-purple-600' };
+      return { color: '#7f1d1d', text: 'Небезпечна', textColor: 'text-red-900' };
+    }
+    
+    // Для CO
+    if (displayMode === 'co') {
+      if (value <= 4400) return { color: '#10b981', text: 'Добра', textColor: 'text-green-600' };
+      if (value <= 9400) return { color: '#f59e0b', text: 'Помірна', textColor: 'text-yellow-600' };
+      if (value <= 12400) return { color: '#f97316', text: 'Нездорова для чутливих', textColor: 'text-orange-600' };
+      if (value <= 15400) return { color: '#ef4444', text: 'Нездорова', textColor: 'text-red-600' };
+      if (value <= 30400) return { color: '#9333ea', text: 'Дуже нездорова', textColor: 'text-purple-600' };
+      return { color: '#7f1d1d', text: 'Небезпечна', textColor: 'text-red-900' };
+    }
+    
+    // Для O3
+    if (displayMode === 'o3') {
+      if (value <= 54) return { color: '#10b981', text: 'Добра', textColor: 'text-green-600' };
+      if (value <= 70) return { color: '#f59e0b', text: 'Помірна', textColor: 'text-yellow-600' };
+      if (value <= 85) return { color: '#f97316', text: 'Нездорова для чутливих', textColor: 'text-orange-600' };
+      if (value <= 105) return { color: '#ef4444', text: 'Нездорова', textColor: 'text-red-600' };
+      if (value <= 200) return { color: '#9333ea', text: 'Дуже нездорова', textColor: 'text-purple-600' };
+      return { color: '#7f1d1d', text: 'Небезпечна', textColor: 'text-red-900' };
+    }
+    
+    // Fallback
+    return { color: '#6b7280', text: 'Невідомо', textColor: 'text-gray-600' };
   };
 
   return (
@@ -105,10 +197,27 @@ const InteractiveMap = ({ districts, onDistrictClick }) => {
           const districtData = districts.find(d => d.id === feature.properties.id);
           if (!districtData) return null;
 
-          const status = getAQIStatus(districtData.baseAQI);
+          const displayValue = getDisplayValue(districtData);
+          const status = getParameterStatus(displayValue);
           const isHovered = hoveredId === feature.properties.id;
           const coords = feature.geometry.coordinates[0][0];
           const center = getPolygonCenter(coords);
+
+          // Визначаємо чи район має відхилення (тільки для AQI)
+          const isBetter = displayMode === 'baseAQI' && analysis.significantly_better.some(d => d.id === districtData.id);
+          const isWorse = displayMode === 'baseAQI' && analysis.significantly_worse.some(d => d.id === districtData.id);
+          const isProblematic = displayMode === 'baseAQI' && analysis.problematic.some(d => d.id === districtData.id);
+
+          // Визначаємо стиль обводки для аномалій
+          const hasAnomaly = isBetter || isWorse || isProblematic;
+          const strokeColor = isHovered ? '#1e40af' : (
+            isProblematic ? '#f97316' : 
+            isWorse ? '#dc2626' : 
+            isBetter ? '#059669' : 
+            '#2563eb'
+          );
+          const strokeDasharray = hasAnomaly ? "10,5" : "none";
+          const strokeWidth = hasAnomaly ? (isHovered ? 5 : 3) : (isHovered ? 4 : 2);
 
           return (
             <g key={feature.properties.id}>
@@ -125,8 +234,9 @@ const InteractiveMap = ({ districts, onDistrictClick }) => {
                 d={createPath(coords)}
                 fill={status.color}
                 fillOpacity={isHovered ? 0.9 : 0.7}
-                stroke={isHovered ? '#1e40af' : '#2563eb'}
-                strokeWidth={isHovered ? 4 : 2}
+                stroke={strokeColor}
+                strokeWidth={strokeWidth}
+                strokeDasharray={strokeDasharray}
                 className="transition-all duration-300 cursor-pointer"
                 filter={isHovered ? "url(#glow)" : "url(#shadow)"}
                 onMouseEnter={() => setHoveredId(feature.properties.id)}
@@ -144,7 +254,7 @@ const InteractiveMap = ({ districts, onDistrictClick }) => {
                 pointerEvents="none"
               />
 
-              {/* Текст з назвою та AQI */}
+              {/* Текст з назвою та значенням */}
               <g 
                 transform={`translate(${center[0]}, ${center[1]})`}
                 className="pointer-events-none"
@@ -171,7 +281,7 @@ const InteractiveMap = ({ districts, onDistrictClick }) => {
                   {districtData.name}
                 </text>
 
-                {/* AQI значення */}
+                {/* Значення параметра */}
                 <text
                   textAnchor="middle"
                   y="25"
@@ -179,7 +289,7 @@ const InteractiveMap = ({ districts, onDistrictClick }) => {
                   fontSize={isHovered ? "22" : "18"}
                   fill={status.color}
                 >
-                  {districtData.baseAQI}
+                  {formatValue(displayValue, displayMode)}
                 </text>
 
                 {/* Статус */}
@@ -221,33 +331,60 @@ const InteractiveMap = ({ districts, onDistrictClick }) => {
         <div className="absolute top-4 left-4 bg-white rounded-lg shadow-2xl p-4 max-w-xs border-2 border-blue-500 animate-fade-in">
           {(() => {
             const district = districts.find(d => d.id === hoveredId);
-            const status = getAQIStatus(district.baseAQI);
+            const displayValue = getDisplayValue(district);
+            const status = getParameterStatus(displayValue);
+            
+            // Визначаємо статус аномалії
+            const isBetter = displayMode === 'baseAQI' && analysis.significantly_better.some(d => d.id === district.id);
+            const isWorse = displayMode === 'baseAQI' && analysis.significantly_worse.some(d => d.id === district.id);
+            const isProblematic = displayMode === 'baseAQI' && analysis.problematic.some(d => d.id === district.id);
+            
+            let anomalyText = null;
+            if (isBetter) anomalyText = { text: '✨ Значно краще за середнє', color: 'text-green-600' };
+            else if (isWorse) anomalyText = { text: '⚠️ Значно гірше за середнє', color: 'text-red-600' };
+            else if (isProblematic) anomalyText = { text: '🚨 Проблемний район', color: 'text-orange-600' };
+
             return (
               <>
                 <h3 className="font-bold text-lg text-gray-800 mb-2">{district.name}</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 text-sm">AQI:</span>
+                    <span className="text-gray-600 text-sm">
+                      {displayMode === 'baseAQI' ? 'AQI:' : 
+                       displayMode === 'pm25' ? 'PM2.5:' :
+                       displayMode === 'pm10' ? 'PM10:' :
+                       displayMode === 'no2' ? 'NO₂:' :
+                       displayMode === 'so2' ? 'SO₂:' :
+                       displayMode === 'co' ? 'CO:' : 'O₃:'}
+                    </span>
                     <span className="text-2xl font-bold" style={{ color: status.color }}>
-                      {district.baseAQI}
+                      {formatValue(displayValue, displayMode)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">Стан:</span>
                     <span className={`font-semibold ${status.textColor}`}>{status.text}</span>
                   </div>
+                  
+                  {/* Показуємо статус аномалії */}
+                  {anomalyText && (
+                    <div className={`pt-2 pb-2 border-t border-b ${anomalyText.color} text-sm font-semibold text-center`}>
+                      {anomalyText.text}
+                    </div>
+                  )}
+                  
                   <div className="pt-2 border-t">
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-600">PM2.5:</span>
-                      <span className="font-semibold">{district.pm25} μg/m³</span>
+                      <span className="font-semibold">{district.pm25.toFixed(2)} μg/m³</span>
                     </div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-600">PM10:</span>
-                      <span className="font-semibold">{district.pm10} μg/m³</span>
+                      <span className="font-semibold">{district.pm10.toFixed(2)} μg/m³</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">NO₂:</span>
-                      <span className="font-semibold">{district.no2} μg/m³</span>
+                      <span className="font-semibold">{district.no2.toFixed(2)} μg/m³</span>
                     </div>
                   </div>
                 </div>
