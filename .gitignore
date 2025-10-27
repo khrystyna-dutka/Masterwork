@@ -9,3 +9,42 @@ yarn-error.log
 # Build
 dist/
 build/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+
+# ML Models
+ml-service/trained_models/
+ml-service/venv/
+ml-service/.env
+*.h5
+*.pkl
+*.joblib
+*.ckpt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
