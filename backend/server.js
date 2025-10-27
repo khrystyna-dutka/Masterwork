@@ -1,12 +1,13 @@
 // server.js - Головний файл сервера
 
 require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-
 const app = express();
+const forecastRoutes = require('./routes/forecast');
 
 // Налаштування безпеки
 app.use(helmet());
@@ -27,6 +28,8 @@ if (process.env.NODE_ENV === 'development') {
 // Парсинг JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use('/api/forecast', forecastRoutes);
 
 // Базовий маршрут
 app.get('/', (req, res) => {
