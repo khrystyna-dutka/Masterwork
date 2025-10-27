@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
 from keras import layers
@@ -6,10 +7,11 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 import os
 from config import Config
 import joblib
-from datetime import datetime
+from datetime import datetime, timedelta
+from utils.aqi_calculator import AQICalculator
 
 class LSTMForecastModel:
-    """LSTM модель для прогнозування PM2.5"""
+    """Multi-output LSTM модель для прогнозування ВСІХ параметрів"""
     
     def __init__(self, district_id):
         self.district_id = district_id
@@ -18,73 +20,76 @@ class LSTMForecastModel:
         self.history_path = os.path.join(Config.MODEL_PATH, f'training_history_{district_id}.pkl')
         self.sequence_length = Config.SEQUENCE_LENGTH
         
-        # Створити папку для моделей
+        # Параметри які прогнозуємо
+        self.output_features = ['pm25', 'pm10', 'no2', 'so2', 'co', 'o3']
+        
         os.makedirs(Config.MODEL_PATH, exist_ok=True)
     
     def build_model(self, input_shape):
         """
-        Побудувати архітектуру LSTM моделі
+        Побудувати Multi-Output LSTM модель
         
         Args:
             input_shape: (sequence_length, n_features)
         """
-        model = keras.Sequential([
-            # Перший LSTM шар
-            layers.LSTM(
-                units=64,
-                return_sequences=True,
-                input_shape=input_shape,
-                name='lstm_1'
-            ),
-            layers.Dropout(0.2, name='dropout_1'),
-            
-            # Другий LSTM шар
-            layers.LSTM(
-                units=32,
-                return_sequences=False,
-                name='lstm_2'
-            ),
-            layers.Dropout(0.2, name='dropout_2'),
-            
-            # Dense шари
-            layers.Dense(16, activation='relu', name='dense_1'),
-            layers.Dropout(0.1, name='dropout_3'),
-            
-            # Вихідний шар (прогноз PM2.5)
-            layers.Dense(1, activation='linear', name='output')
-        ])
+        # Input
+        inputs = layers.Input(shape=input_shape, name='input')
         
-        # Компіляція моделі
-        model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=0.001),
-            loss='mean_squared_error',
-            metrics=['mae', 'mse']
+        # Перший LSTM шар
+        x = layers.LSTM(128, return_sequences=True, name='lstm_1')(inputs)
+        x = layers.Dropout(0.2, name='dropout_1')(x)
+        
+        # Другий LSTM шар
+        x = layers.LSTM(64, return_sequences=False, name='lstm_2')(x)
+        x = layers.Dropout(0.2, name='dropout_2')(x)
+        
+        # Спільний Dense шар
+        x = layers.Dense(32, activation='relu', name='dense_shared')(x)
+        x = layers.Dropout(0.1, name='dropout_3')(x)
+        
+        # 6 окремих виходів для кожного параметру
+        output_pm25 = layers.Dense(1, activation='linear', name='pm25')(x)
+        output_pm10 = layers.Dense(1, activation='linear', name='pm10')(x)
+        output_no2 = layers.Dense(1, activation='linear', name='no2')(x)
+        output_so2 = layers.Dense(1, activation='linear', name='so2')(x)
+        output_co = layers.Dense(1, activation='linear', name='co')(x)
+        output_o3 = layers.Dense(1, activation='linear', name='o3')(x)
+        
+        # Створити модель
+        self.model = keras.Model(
+            inputs=inputs,
+            outputs=[output_pm25, output_pm10, output_no2, output_so2, output_co, output_o3],
+            name='multi_output_lstm'
         )
         
-        self.model = model
+        # Компіляція (БЕЗ МЕТРИК - простіше!)
+        self.model.compile(
+            optimizer=keras.optimizers.Adam(learning_rate=0.001),
+            loss='mean_squared_error'
+        )
         
-        print("✅ LSTM модель створено")
-        print(f"   Параметрів: {model.count_params():,}")
+        print("✅ Multi-Output LSTM модель створено")
+        print(f"   Параметрів: {self.model.count_params():,}")
+        print(f"   Виходи: {', '.join(self.output_features)}")
         
-        return model
+        return self.model
     
-    def train(self, X_train, y_train, X_val=None, y_val=None, epochs=50, batch_size=32):
+    def train(self, X_train, y_train_dict, X_val=None, y_val_dict=None, epochs=50, batch_size=32):
         """
         Тренувати модель
         
         Args:
             X_train: Тренувальні дані (sequences)
-            y_train: Цільові значення
-            X_val: Валідаційні дані (опціонально)
-            y_val: Валідаційні цільові значення
-            epochs: Кількість епох
-            batch_size: Розмір батча
-        
-        Returns:
-            History об'єкт
+            y_train_dict: Dict з цільовими значеннями для кожного параметру
+            X_val: Валідаційні дані
+            y_val_dict: Dict з валідаційними цільовими значеннями
         """
         if self.model is None:
             self.build_model(input_shape=(X_train.shape[1], X_train.shape[2]))
+        
+        # Перетворити dict в список для Keras
+        y_train = [y_train_dict[feat] for feat in self.output_features]
+        y_val = [y_val_dict[feat] for feat in self.output_features] if y_val_dict else None
         
         # Callbacks
         callbacks = [
@@ -102,10 +107,9 @@ class LSTMForecastModel:
             )
         ]
         
-        # Валідаційні дані
         validation_data = (X_val, y_val) if X_val is not None and y_val is not None else None
         
-        print(f"\n🎯 Початок тренування моделі для району {self.district_id}")
+        print(f"\n🎯 Початок тренування Multi-Output моделі для району {self.district_id}")
         print(f"   Тренувальних зразків: {len(X_train)}")
         if validation_data:
             print(f"   Валідаційних зразків: {len(X_val)}")
@@ -121,11 +125,9 @@ class LSTMForecastModel:
             verbose=1
         )
         
-        # Зберегти історію тренування
+        # Зберегти історію
         history_dict = {
             'loss': history.history['loss'],
-            'mae': history.history['mae'],
-            'mse': history.history['mse'],
             'trained_at': datetime.now().isoformat(),
             'epochs': len(history.history['loss']),
             'district_id': self.district_id
@@ -133,14 +135,11 @@ class LSTMForecastModel:
         
         if validation_data:
             history_dict['val_loss'] = history.history['val_loss']
-            history_dict['val_mae'] = history.history['val_mae']
-            history_dict['val_mse'] = history.history['val_mse']
         
         joblib.dump(history_dict, self.history_path)
         
         print(f"\n✅ Тренування завершено!")
         print(f"   Фінальний loss: {history.history['loss'][-1]:.4f}")
-        print(f"   Фінальний MAE: {history.history['mae'][-1]:.4f}")
         print(f"   Модель збережено: {self.model_path}")
         
         return history
@@ -155,84 +154,161 @@ class LSTMForecastModel:
             print(f"⚠️ Модель не знайдено: {self.model_path}")
             return False
     
-    def predict(self, X):
-        """
-        Зробити прогноз
-        
-        Args:
-            X: Вхідні дані (sequences)
-        
-        Returns:
-            Прогнози
-        """
-        if self.model is None:
-            if not self.load_model():
-                raise Exception("Модель не знайдено. Спочатку потрібно натренувати модель.")
-        
-        predictions = self.model.predict(X, verbose=0)
-        return predictions.flatten()
-    
     def predict_future(self, last_sequence, n_hours=24):
         """
-        Прогнозування на N годин вперед
+        Прогнозування на N годин вперед для ВСІХ параметрів з ДЕНОРМАЛІЗАЦІЄЮ
         
         Args:
-            last_sequence: Остання послідовність (sequence_length, n_features)
+            last_sequence: Остання послідовність (sequence_length, n_features) - НОРМАЛІЗОВАНА
             n_hours: Кількість годин для прогнозу
         
         Returns:
-            Масив прогнозів
+            DataFrame з прогнозами всіх параметрів (ДЕНОРМАЛІЗОВАНІ)
         """
         if self.model is None:
             if not self.load_model():
                 raise Exception("Модель не знайдено")
+        
+        # Завантажити scaler для денормалізації
+        import joblib
+        scaler_path = os.path.join(Config.MODEL_PATH, f'scaler_{self.district_id}.pkl')
+        if not os.path.exists(scaler_path):
+            raise Exception(f"Scaler не знайдено: {scaler_path}")
+        
+        scaler = joblib.load(scaler_path)
+        
+        print(f"\n🔮 Прогнозування всіх параметрів на {n_hours} годин для району {self.district_id}")
         
         predictions = []
         current_sequence = last_sequence.copy()
         
-        for _ in range(n_hours):
-            # Прогноз наступної години
-            next_pred = self.model.predict(current_sequence.reshape(1, *current_sequence.shape), verbose=0)[0, 0]
-            predictions.append(next_pred)
+        # Температура, вологість з останньої послідовності (нормалізовані)
+        temperature_norm = current_sequence[-1, 1] if current_sequence.shape[1] > 1 else 0.5
+        humidity_norm = current_sequence[-1, 2] if current_sequence.shape[1] > 2 else 0.5
+        
+        start_time = datetime.now()
+        
+        for i in range(n_hours):
+            # Прогноз ВСІХ параметрів одночасно (нормалізовані)
+            preds = self.model.predict(
+                current_sequence.reshape(1, *current_sequence.shape), 
+                verbose=0
+            )
             
-            # Оновити послідовність (rolling window)
-            # Зсуваємо на 1 позицію і додаємо новий прогноз
+            # Розпакувати прогнози (6 виходів - всі нормалізовані від 0 до 1)
+            pm25_norm = max(0.0, min(1.0, float(preds[0][0, 0])))
+            pm10_norm = max(0.0, min(1.0, float(preds[1][0, 0])))
+            no2_norm = max(0.0, min(1.0, float(preds[2][0, 0])))
+            so2_norm = max(0.0, min(1.0, float(preds[3][0, 0])))
+            co_norm = max(0.0, min(1.0, float(preds[4][0, 0])))
+            o3_norm = max(0.0, min(1.0, float(preds[5][0, 0])))
+            
+            # Створити вектор для денормалізації (всі 8 ознак)
+            # Порядок: pm25, temperature, humidity, pm10, no2, so2, co, o3
+            normalized_vector = np.array([[
+                pm25_norm, temperature_norm, humidity_norm,
+                pm10_norm, no2_norm, so2_norm, co_norm, o3_norm
+            ]])
+            
+            # ДЕНОРМАЛІЗУВАТИ назад до реальних значень
+            denormalized = scaler.inverse_transform(normalized_vector)[0]
+            
+            pm25_pred = max(0.0, float(denormalized[0]))
+            temperature = float(denormalized[1])
+            humidity = int(max(0, min(100, denormalized[2])))
+            pm10_pred = max(0.0, float(denormalized[3]))
+            no2_pred = max(0.0, float(denormalized[4]))
+            so2_pred = max(0.0, float(denormalized[5]))
+            co_pred = max(0.0, float(denormalized[6]))
+            o3_pred = max(0.0, float(denormalized[7]))
+            
+            # Розрахувати AQI з реальних значень
+            aqi_result = AQICalculator.calculate_full_aqi(
+                pm25=pm25_pred,
+                pm10=pm10_pred,
+                no2=no2_pred,
+                so2=so2_pred,
+                co=co_pred,
+                o3=o3_pred
+            )
+            
+            aqi = aqi_result['aqi']
+            aqi_status = AQICalculator.get_aqi_status(aqi)
+            
+            # Час прогнозу
+            forecast_time = start_time + timedelta(hours=i+1)
+            
+            # Зберегти прогноз
+            predictions.append({
+                'measured_at': forecast_time,
+                'pm25': round(pm25_pred, 2),
+                'pm10': round(pm10_pred, 2),
+                'no2': round(no2_pred, 2),
+                'so2': round(so2_pred, 2),
+                'co': round(co_pred, 2),
+                'o3': round(o3_pred, 2),
+                'aqi': aqi,
+                'aqi_status': aqi_status,
+                'dominant_pollutant': aqi_result['dominant'],
+                'temperature': round(temperature, 1),
+                'humidity': humidity,
+                'confidence_level': 0.90 - (i * 0.01)
+            })
+            
+            # Оновити послідовність (rolling window) з нормалізованими прогнозами
             current_sequence = np.roll(current_sequence, -1, axis=0)
-            current_sequence[-1, 0] = next_pred  # PM2.5 в першій колонці
-            
-            # Інші ознаки (температура, вологість і т.д.) беремо з останнього значення
-            # В реальності тут можна використати прогноз погоди
+            current_sequence[-1, 0] = pm25_norm  # PM2.5
+            current_sequence[-1, 1] = temperature_norm  # Temperature
+            current_sequence[-1, 2] = humidity_norm  # Humidity
+            if current_sequence.shape[1] >= 8:
+                current_sequence[-1, 3] = pm10_norm
+                current_sequence[-1, 4] = no2_norm
+                current_sequence[-1, 5] = so2_norm
+                current_sequence[-1, 6] = co_norm
+                current_sequence[-1, 7] = o3_norm
         
-        return np.array(predictions)
-    
-    def evaluate(self, X_test, y_test):
-        """
-        Оцінити модель на тестових даних
+        forecast_df = pd.DataFrame(predictions)
         
-        Args:
-            X_test: Тестові дані
-            y_test: Тестові цільові значення
+        print(f"✅ Повний прогноз створено (ДЕНОРМАЛІЗОВАНО):")
+        print(f"   PM2.5: {forecast_df['pm25'].min():.2f} - {forecast_df['pm25'].max():.2f}")
+        print(f"   PM10: {forecast_df['pm10'].min():.2f} - {forecast_df['pm10'].max():.2f}")
+        print(f"   NO2: {forecast_df['no2'].min():.2f} - {forecast_df['no2'].max():.2f}")
+        print(f"   AQI: {forecast_df['aqi'].min()} - {forecast_df['aqi'].max()}")
         
-        Returns:
-            Dict з метриками
-        """
+        return forecast_df
+
+    def evaluate(self, X_test, y_test_dict):
+        """Оцінити модель"""
         if self.model is None:
             if not self.load_model():
                 raise Exception("Модель не знайдено")
         
-        results = self.model.evaluate(X_test, y_test, verbose=0)
+        y_test = [y_test_dict[feat] for feat in self.output_features]
+        
+        # Отримати прогнози
+        predictions = self.model.predict(X_test, verbose=0)
+        
+        # Розрахувати MAE вручну для кожного виходу
+        from sklearn.metrics import mean_absolute_error
         
         metrics = {
-            'loss': results[0],
-            'mae': results[1],
-            'mse': results[2],
-            'rmse': np.sqrt(results[2])
+            'pm25_mae': mean_absolute_error(y_test[0], predictions[0]),
+            'pm10_mae': mean_absolute_error(y_test[1], predictions[1]),
+            'no2_mae': mean_absolute_error(y_test[2], predictions[2]),
+            'so2_mae': mean_absolute_error(y_test[3], predictions[3]),
+            'co_mae': mean_absolute_error(y_test[4], predictions[4]),
+            'o3_mae': mean_absolute_error(y_test[5], predictions[5])
         }
         
-        print(f"\n📊 Оцінка моделі:")
-        print(f"   Loss: {metrics['loss']:.4f}")
-        print(f"   MAE: {metrics['mae']:.4f}")
-        print(f"   RMSE: {metrics['rmse']:.4f}")
+        # Середній MAE
+        avg_mae = sum(metrics.values()) / len(metrics)
+        metrics['avg_mae'] = avg_mae
+        
+        print(f"\n📊 Оцінка Multi-Output моделі:")
+        print(f"   Середній MAE: {avg_mae:.4f}")
+        print(f"   PM2.5 MAE: {metrics['pm25_mae']:.4f}")
+        print(f"   PM10 MAE: {metrics['pm10_mae']:.4f}")
+        print(f"   NO2 MAE: {metrics['no2_mae']:.4f}")
         
         return metrics
     
@@ -242,7 +318,9 @@ class LSTMForecastModel:
             'district_id': self.district_id,
             'model_exists': os.path.exists(self.model_path),
             'model_path': self.model_path,
-            'sequence_length': self.sequence_length
+            'sequence_length': self.sequence_length,
+            'model_type': 'Multi-Output LSTM',
+            'output_features': self.output_features
         }
         
         if os.path.exists(self.history_path):

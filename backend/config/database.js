@@ -2,6 +2,13 @@
 
 const { Pool } = require('pg');
 
+console.log('🔍 DB Config:');
+console.log('  Host:', process.env.DB_HOST);
+console.log('  User:', process.env.DB_USER);
+console.log('  DB:', process.env.DB_NAME);
+console.log('  Password:', process.env.DB_PASSWORD ? '***встановлено***' : '❌ ВІДСУТНІЙ');
+console.log('  Type:', typeof process.env.DB_PASSWORD);
+
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,

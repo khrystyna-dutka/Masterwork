@@ -132,11 +132,8 @@ class DatabaseHelper:
     
     def save_forecast(self, district_id, forecasts_df):
         """
-        Зберегти прогнози в базу даних
-        
-        Args:
-            district_id: ID району
-            forecasts_df: DataFrame з прогнозами
+        Зберегти прогнози в БД
+        forecasts_df: DataFrame з колонками [measured_at, pm25, pm10, no2, so2, co, o3, ...]
         """
         try:
             conn = self.get_connection()
@@ -144,10 +141,12 @@ class DatabaseHelper:
             
             # Видалити старі прогнози для цього району
             cursor.execute("""
-                DELETE FROM air_quality_history 
-                WHERE district_id = %s AND is_forecast = TRUE
+                DELETE FROM air_quality_history
+                WHERE district_id = %s AND is_forecast = true AND measured_at > NOW()
             """, (district_id,))
-
+            
+            print(f"🗑️ Видалено старі прогнози для району {district_id}")
+            
             # Вставити нові прогнози
             for _, row in forecasts_df.iterrows():
                 cursor.execute("""
@@ -172,20 +171,21 @@ class DatabaseHelper:
                     float(row['wind_speed']) if pd.notna(row.get('wind_speed')) else None,
                     row.get('wind_direction') if pd.notna(row.get('wind_direction')) else None,
                     row['measured_at'],
-                    True,  # is_forecast
+                    True,  # ← is_forecast = True для прогнозів!
                     float(row.get('confidence_level', 0.85)),
                     'ml_model'
                 ))
-                        
+            
             conn.commit()
+            print(f"✅ Збережено {len(forecasts_df)} прогнозів для району {district_id}")
+            
             cursor.close()
             conn.close()
             
-            print(f"✅ Збережено {len(forecasts_df)} прогнозів для району {district_id}")
             return True
             
         except Exception as e:
-            print(f"❌ Помилка збереження прогнозів: {e}")
+            print(f"❌ Помилка збереження прогнозів: {str(e)}")
             return False
     
     def get_data_stats(self, district_id):

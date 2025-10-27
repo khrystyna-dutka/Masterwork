@@ -1,182 +1,177 @@
+# ml-service/data/preprocessor.py
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-from datetime import datetime, timedelta
 import joblib
 import os
 from config import Config
 
 class DataPreprocessor:
-    """Клас для підготовки даних для ML моделі"""
+    """Клас для підготовки та нормалізації даних"""
     
     def __init__(self, district_id):
         self.district_id = district_id
         self.scaler = MinMaxScaler()
-        self.scaler_path = os.path.join(Config.MODEL_PATH, f'scaler_district_{district_id}.pkl')
+        self.scaler_path = os.path.join(Config.MODEL_PATH, f'scaler_{district_id}.pkl')
+        
+        # Колонки які використовуємо для прогнозування
+        self.feature_columns = [
+            'pm25', 'temperature', 'humidity', 
+            'pm10', 'no2', 'so2', 'co', 'o3'
+        ]
     
     def prepare_data(self, df):
         """
-        Підготувати дані для тренування/прогнозування
+        Підготувати дані для моделі
         
         Args:
-            df: DataFrame з історичними даними
+            df: DataFrame з сирими даними
         
         Returns:
-            Очищені та нормалізовані дані
+            DataFrame з підготованими даними
         """
-        if df.empty:
-            print("⚠️ DataFrame порожній")
-            return None
-        
-        # Копіюємо DataFrame
+        # Копіюємо щоб не змінювати оригінал
         data = df.copy()
         
-        # Перетворюємо measured_at в datetime
-        data['measured_at'] = pd.to_datetime(data['measured_at'])
+        # Конвертувати measured_at в datetime якщо треба
+        if 'measured_at' in data.columns:
+            data['measured_at'] = pd.to_datetime(data['measured_at'])
+            data = data.sort_values('measured_at')
         
-        # Сортуємо по часу
-        data = data.sort_values('measured_at')
+        # Заповнити пропущені значення
+        for col in self.feature_columns:
+            if col in data.columns:
+                data[col] = data[col].fillna(data[col].mean())
+            else:
+                # Якщо колонки немає - додати з нульовими значеннями
+                data[col] = 0
         
-        # Додаємо часові ознаки
-        data['hour'] = data['measured_at'].dt.hour
-        data['day_of_week'] = data['measured_at'].dt.dayofweek
-        data['month'] = data['measured_at'].dt.month
-        data['day_of_year'] = data['measured_at'].dt.dayofyear
+        # Вибрати тільки потрібні колонки в правильному порядку
+        prepared = data[self.feature_columns].copy()
         
-        # Обираємо потрібні колонки
-        feature_columns = [
-            'pm25', 'pm10', 'no2', 'so2', 'co', 'o3',
-            'temperature', 'humidity', 'pressure', 'wind_speed',
-            'hour', 'day_of_week', 'month'
-        ]
-        
-        # Фільтруємо тільки наявні колонки
-        available_columns = [col for col in feature_columns if col in data.columns]
-        data = data[available_columns]
-        
-        # Заповнюємо пропущені значення
-        data = data.ffill().bfill()
-        
-        # Видаляємо рядки з NaN якщо залишились
-        data = data.dropna()
-        
-        print(f"✅ Підготовлено {len(data)} записів з {len(available_columns)} ознаками")
-        
-        return data
+        print(f"✅ Дані підготовано: {len(prepared)} записів, {len(self.feature_columns)} ознак")
+        return prepared
     
     def normalize_data(self, data, fit=True):
         """
-        Нормалізувати дані (0-1)
+        Нормалізувати дані
         
         Args:
-            data: DataFrame або array
-            fit: Чи треба fit scaler (True для тренування, False для прогнозу)
+            data: numpy array або DataFrame
+            fit: True для тренування scaler, False для використання збереженого
         
         Returns:
             Нормалізовані дані
         """
         if fit:
+            # Тренування scaler
             normalized = self.scaler.fit_transform(data)
             # Зберегти scaler
-            os.makedirs(Config.MODEL_PATH, exist_ok=True)
             joblib.dump(self.scaler, self.scaler_path)
-            print(f"✅ Scaler збережено: {self.scaler_path}")
+            print(f"💾 Scaler збережено: {self.scaler_path}")
         else:
-            # Завантажити існуючий scaler
+            # Завантажити збережений scaler
             if os.path.exists(self.scaler_path):
                 self.scaler = joblib.load(self.scaler_path)
                 normalized = self.scaler.transform(data)
             else:
-                print("⚠️ Scaler не знайдено, використовую новий")
-                normalized = self.scaler.fit_transform(data)
+                raise Exception(f"Scaler не знайдено: {self.scaler_path}. Потрібно спочатку натренувати модель.")
         
         return normalized
     
-    def create_sequences(self, data, sequence_length=24):
+    def inverse_transform(self, data):
         """
-        Створити послідовності для LSTM
+        Повернути нормалізовані дані до оригінального масштабу
         
         Args:
             data: Нормалізовані дані
-            sequence_length: Довжина послідовності (24 години)
         
         Returns:
-            X (вхідні послідовності), y (цільові значення)
+            Денормалізовані дані
+        """
+        if not os.path.exists(self.scaler_path):
+            raise Exception(f"Scaler не знайдено: {self.scaler_path}")
+        
+        self.scaler = joblib.load(self.scaler_path)
+        return self.scaler.inverse_transform(data)
+    
+    def create_sequences(self, data, sequence_length):
+        """
+        Створити послідовності для LSTM (СТАРИЙ метод - для сумісності)
+        
+        Args:
+            data: Нормалізовані дані
+            sequence_length: Довжина послідовності
+        
+        Returns:
+            X: послідовності (samples, sequence_length, features)
+            y: цільові значення PM2.5
         """
         X, y = [], []
         
         for i in range(len(data) - sequence_length):
             X.append(data[i:i + sequence_length])
-            # Прогнозуємо тільки PM2.5 (перша колонка)
+            # PM2.5 на першій позиції
             y.append(data[i + sequence_length, 0])
         
+        return np.array(X), np.array(y)
+    
+    def create_multi_output_sequences(self, data, sequence_length):
+        """
+        Створити послідовності для multi-output LSTM
+        
+        Args:
+            data: Нормалізовані дані
+            sequence_length: Довжина послідовності
+        
+        Returns:
+            X: послідовності (samples, sequence_length, features)
+            y_dict: словник з цільовими значеннями для кожного параметру
+        """
+        X = []
+        y_pm25, y_pm10, y_no2, y_so2, y_co, y_o3 = [], [], [], [], [], []
+        
+        for i in range(len(data) - sequence_length):
+            X.append(data[i:i + sequence_length])
+            
+            # Цільові значення (наступна точка після послідовності)
+            next_point = data[i + sequence_length]
+            
+            # Позиції параметрів згідно self.feature_columns:
+            # 0: pm25, 1: temperature, 2: humidity, 
+            # 3: pm10, 4: no2, 5: so2, 6: co, 7: o3
+            y_pm25.append(next_point[0])
+            y_pm10.append(next_point[3])
+            y_no2.append(next_point[4])
+            y_so2.append(next_point[5])
+            y_co.append(next_point[6])
+            y_o3.append(next_point[7])
+        
         X = np.array(X)
-        y = np.array(y)
         
-        print(f"✅ Створено {len(X)} послідовностей")
-        print(f"   Shape X: {X.shape}, Shape y: {y.shape}")
+        y_dict = {
+            'pm25': np.array(y_pm25),
+            'pm10': np.array(y_pm10),
+            'no2': np.array(y_no2),
+            'so2': np.array(y_so2),
+            'co': np.array(y_co),
+            'o3': np.array(y_o3)
+        }
         
-        return X, y
+        print(f"✅ Створено {len(X)} послідовностей з 6 виходами")
+        return X, y_dict
     
-    def inverse_transform_predictions(self, predictions):
-        """
-        Повернути прогнози до оригінального масштабу
+    def get_scaler_info(self):
+        """Отримати інформацію про scaler"""
+        info = {
+            'exists': os.path.exists(self.scaler_path),
+            'path': self.scaler_path,
+            'feature_columns': self.feature_columns
+        }
         
-        Args:
-            predictions: Нормалізовані прогнози
+        if info['exists']:
+            scaler = joblib.load(self.scaler_path)
+            info['data_min'] = scaler.data_min_.tolist()
+            info['data_max'] = scaler.data_max_.tolist()
         
-        Returns:
-            Прогнози в оригінальному масштабі
-        """
-        # Створюємо dummy array з потрібною кількістю колонок
-        n_features = self.scaler.n_features_in_
-        dummy = np.zeros((len(predictions), n_features))
-        dummy[:, 0] = predictions  # PM2.5 в першій колонці
-        
-        # Inverse transform
-        inversed = self.scaler.inverse_transform(dummy)
-        
-        return inversed[:, 0]  # Повертаємо тільки PM2.5
-    
-    def calculate_aqi_from_pm25(self, pm25_value):
-        """
-        Розрахувати AQI з PM2.5
-        
-        Args:
-            pm25_value: Значення PM2.5
-        
-        Returns:
-            AQI значення та статус
-        """
-        # Таблиця перетворення PM2.5 в AQI (EPA стандарт)
-        breakpoints = [
-            (0.0, 12.0, 0, 50),
-            (12.1, 35.4, 51, 100),
-            (35.5, 55.4, 101, 150),
-            (55.5, 150.4, 151, 200),
-            (150.5, 250.4, 201, 300),
-            (250.5, 500.4, 301, 500)
-        ]
-        
-        for bp_lo, bp_hi, aqi_lo, aqi_hi in breakpoints:
-            if bp_lo <= pm25_value <= bp_hi:
-                aqi = ((aqi_hi - aqi_lo) / (bp_hi - bp_lo)) * (pm25_value - bp_lo) + aqi_lo
-                break
-        else:
-            aqi = 500  # Максимум
-        
-        # Визначити статус
-        if aqi <= 50:
-            status = 'Добра'
-        elif aqi <= 100:
-            status = 'Помірна'
-        elif aqi <= 150:
-            status = 'Нездорова для чутливих'
-        elif aqi <= 200:
-            status = 'Нездорова'
-        elif aqi <= 300:
-            status = 'Дуже нездорова'
-        else:
-            status = 'Небезпечна'
-        
-        return int(aqi), status
+        return info

@@ -25,7 +25,7 @@ class AirQualityService {
             lat: lat,
             lon: lon,
             appid: this.openWeatherApiKey,
-            units: 'metric' // Цельсій
+            units: 'metric'
           },
           timeout: 5000
         }
@@ -46,6 +46,167 @@ class AirQualityService {
       console.error('OpenWeather Weather API Error:', error.message);
       return null;
     }
+  }
+
+  /**
+   * Базова функція розрахунку AQI за EPA формулою
+   */
+  calculateAQI(concentration, breakpoints) {
+    // Знаходимо відповідний діапазон
+    let bp = breakpoints[0];
+    for (const breakpoint of breakpoints) {
+      if (concentration >= breakpoint.cLow && concentration <= breakpoint.cHigh) {
+        bp = breakpoint;
+        break;
+      }
+    }
+
+    // Якщо значення вище максимального
+    if (concentration > breakpoints[breakpoints.length - 1].cHigh) {
+      return 500;
+    }
+
+    // EPA формула
+    const aqi = Math.round(
+      ((bp.iHigh - bp.iLow) / (bp.cHigh - bp.cLow)) * (concentration - bp.cLow) + bp.iLow
+    );
+
+    return aqi;
+  }
+
+  /**
+   * Розрахунок AQI для PM2.5 (μg/m³)
+   */
+  calculateAQIFromPM25(pm25) {
+    const breakpoints = [
+      { cLow: 0.0, cHigh: 12.0, iLow: 0, iHigh: 50 },
+      { cLow: 12.1, cHigh: 35.4, iLow: 51, iHigh: 100 },
+      { cLow: 35.5, cHigh: 55.4, iLow: 101, iHigh: 150 },
+      { cLow: 55.5, cHigh: 150.4, iLow: 151, iHigh: 200 },
+      { cLow: 150.5, cHigh: 250.4, iLow: 201, iHigh: 300 },
+      { cLow: 250.5, cHigh: 500.4, iLow: 301, iHigh: 500 }
+    ];
+    return this.calculateAQI(pm25, breakpoints);
+  }
+
+  /**
+   * Розрахунок AQI для PM10 (μg/m³)
+   */
+  calculateAQIFromPM10(pm10) {
+    const breakpoints = [
+      { cLow: 0, cHigh: 54, iLow: 0, iHigh: 50 },
+      { cLow: 55, cHigh: 154, iLow: 51, iHigh: 100 },
+      { cLow: 155, cHigh: 254, iLow: 101, iHigh: 150 },
+      { cLow: 255, cHigh: 354, iLow: 151, iHigh: 200 },
+      { cLow: 355, cHigh: 424, iLow: 201, iHigh: 300 },
+      { cLow: 425, cHigh: 604, iLow: 301, iHigh: 500 }
+    ];
+    return this.calculateAQI(pm10, breakpoints);
+  }
+
+  /**
+   * Розрахунок AQI для NO2 (μg/m³)
+   * Конвертація: ppb × 1.88 = μg/m³
+   */
+  calculateAQIFromNO2(no2) {
+    // NO2 в μg/m³, конвертуємо в ppb
+    const no2_ppb = no2 / 1.88;
+    
+    const breakpoints = [
+      { cLow: 0, cHigh: 53, iLow: 0, iHigh: 50 },
+      { cLow: 54, cHigh: 100, iLow: 51, iHigh: 100 },
+      { cLow: 101, cHigh: 360, iLow: 101, iHigh: 150 },
+      { cLow: 361, cHigh: 649, iLow: 151, iHigh: 200 },
+      { cLow: 650, cHigh: 1249, iLow: 201, iHigh: 300 },
+      { cLow: 1250, cHigh: 2049, iLow: 301, iHigh: 500 }
+    ];
+    return this.calculateAQI(no2_ppb, breakpoints);
+  }
+
+  /**
+   * Розрахунок AQI для SO2 (μg/m³)
+   * Конвертація: ppb × 2.62 = μg/m³
+   */
+  calculateAQIFromSO2(so2) {
+    // SO2 в μg/m³, конвертуємо в ppb
+    const so2_ppb = so2 / 2.62;
+    
+    const breakpoints = [
+      { cLow: 0, cHigh: 35, iLow: 0, iHigh: 50 },
+      { cLow: 36, cHigh: 75, iLow: 51, iHigh: 100 },
+      { cLow: 76, cHigh: 185, iLow: 101, iHigh: 150 },
+      { cLow: 186, cHigh: 304, iLow: 151, iHigh: 200 },
+      { cLow: 305, cHigh: 604, iLow: 201, iHigh: 300 },
+      { cLow: 605, cHigh: 1004, iLow: 301, iHigh: 500 }
+    ];
+    return this.calculateAQI(so2_ppb, breakpoints);
+  }
+
+  /**
+   * Розрахунок AQI для CO (μg/m³)
+   * Конвертація: ppm × 1145 = μg/m³
+   */
+  calculateAQIFromCO(co) {
+    // CO в μg/m³, конвертуємо в ppm
+    const co_ppm = co / 1145;
+    
+    const breakpoints = [
+      { cLow: 0.0, cHigh: 4.4, iLow: 0, iHigh: 50 },
+      { cLow: 4.5, cHigh: 9.4, iLow: 51, iHigh: 100 },
+      { cLow: 9.5, cHigh: 12.4, iLow: 101, iHigh: 150 },
+      { cLow: 12.5, cHigh: 15.4, iLow: 151, iHigh: 200 },
+      { cLow: 15.5, cHigh: 30.4, iLow: 201, iHigh: 300 },
+      { cLow: 30.5, cHigh: 50.4, iLow: 301, iHigh: 500 }
+    ];
+    return this.calculateAQI(co_ppm, breakpoints);
+  }
+
+  /**
+   * Розрахунок AQI для O3 (μg/m³)
+   * Конвертація: ppb × 2.00 = μg/m³
+   */
+  calculateAQIFromO3(o3) {
+    // O3 в μg/m³, конвертуємо в ppb
+    const o3_ppb = o3 / 2.00;
+    
+    const breakpoints = [
+      { cLow: 0, cHigh: 54, iLow: 0, iHigh: 50 },
+      { cLow: 55, cHigh: 70, iLow: 51, iHigh: 100 },
+      { cLow: 71, cHigh: 85, iLow: 101, iHigh: 150 },
+      { cLow: 86, cHigh: 105, iLow: 151, iHigh: 200 },
+      { cLow: 106, cHigh: 200, iLow: 201, iHigh: 300 },
+      { cLow: 201, cHigh: 604, iLow: 301, iHigh: 500 }
+    ];
+    return this.calculateAQI(o3_ppb, breakpoints);
+  }
+
+  /**
+   * Розрахунок повного AQI з усіх параметрів
+   */
+  calculateFullAQI(pm25, pm10, no2, so2, co, o3) {
+    const aqis = {
+      pm25: pm25 > 0 ? this.calculateAQIFromPM25(pm25) : 0,
+      pm10: pm10 > 0 ? this.calculateAQIFromPM10(pm10) : 0,
+      no2: no2 > 0 ? this.calculateAQIFromNO2(no2) : 0,
+      so2: so2 > 0 ? this.calculateAQIFromSO2(so2) : 0,
+      co: co > 0 ? this.calculateAQIFromCO(co) : 0,
+      o3: o3 > 0 ? this.calculateAQIFromO3(o3) : 0
+    };
+
+    // Знаходимо максимальний AQI
+    const maxAQI = Math.max(...Object.values(aqis));
+    
+    // Знаходимо який параметр домінантний
+    const dominant = Object.keys(aqis).find(key => aqis[key] === maxAQI);
+
+    console.log(`🔢 AQI по параметрах:`, aqis);
+    console.log(`👑 Домінантний: ${dominant.toUpperCase()} = ${maxAQI}`);
+
+    return {
+      aqi: maxAQI,
+      dominant: dominant,
+      breakdown: aqis
+    };
   }
 
   /**
@@ -72,20 +233,22 @@ class AirQualityService {
       const data = response.data.list[0];
       const components = data.components;
       
-      // OpenWeather повертає AQI від 1 до 5
-      // Конвертуємо до шкали 0-500
-      const aqiConversion = {
-        1: 25,   // Good
-        2: 75,   // Fair
-        3: 125,  // Moderate
-        4: 175,  // Poor
-        5: 275   // Very Poor
-      };
+      console.log(`📊 OpenWeather компоненти [${lat}, ${lon}]:`, components);
       
-      const aqi = aqiConversion[data.main.aqi] || 50;
+      // Розраховуємо AQI з УСІХ параметрів
+      const aqiResult = this.calculateFullAQI(
+        components.pm2_5 || 0,
+        components.pm10 || 0,
+        components.no2 || 0,
+        components.so2 || 0,
+        components.co || 0,
+        components.o3 || 0
+      );
       
       return {
-        aqi: aqi,
+        aqi: aqiResult.aqi,
+        dominant_pollutant: aqiResult.dominant,
+        aqi_breakdown: aqiResult.breakdown,
         pm25: components.pm2_5 || 0,
         pm10: components.pm10 || 0,
         no2: components.no2 || 0,
@@ -105,70 +268,53 @@ class AirQualityService {
    * Генерувати реалістичні тестові дані на основі району
    */
   generateMockData(district) {
-    // Базові значення залежать від характеристик району
-    const trafficFactor = (district.id === 2 || district.id === 3) ? 1.3 : 1.0; // Залізничний та Франківський
-    const greenFactor = (district.id === 5 || district.id === 6) ? 0.7 : 1.0;   // Личаківський та Сихівський
+    const trafficFactor = (district.id === 2 || district.id === 3) ? 1.3 : 1.0;
+    const greenFactor = (district.id === 5 || district.id === 6) ? 0.7 : 1.0;
     
     const basePM25 = 15 * trafficFactor * greenFactor;
     const basePM10 = 30 * trafficFactor * greenFactor;
     const baseNO2 = 40 * trafficFactor * greenFactor;
     
-    // Додаємо випадкову варіацію ±20%
     const variance = () => 0.8 + Math.random() * 0.4;
     
     const pm25 = Math.round(basePM25 * variance() * 10) / 10;
     const pm10 = Math.round(basePM10 * variance() * 10) / 10;
     const no2 = Math.round(baseNO2 * variance() * 10) / 10;
+    const so2 = Math.round(8 * variance() * 10) / 10;
+    const co = Math.round(300 * variance());
+    const o3 = Math.round(50 * variance() * 10) / 10;
     
-    const aqi = this.calculateAQIFromPM25(pm25);
+    const aqiResult = this.calculateFullAQI(pm25, pm10, no2, so2, co, o3);
     
-    // Реалістична температура для поточного сезону
     const now = new Date();
-    const month = now.getMonth(); // 0-11
+    const month = now.getMonth();
     let baseTemp;
     
-    if (month >= 11 || month <= 1) { // Грудень, Січень, Лютий - зима
-      baseTemp = -2 + Math.random() * 8; // від -2 до +6
-    } else if (month >= 2 && month <= 4) { // Березень, Квітень, Травень - весна
-      baseTemp = 5 + Math.random() * 15; // від +5 до +20
-    } else if (month >= 5 && month <= 8) { // Червень, Липень, Серпень, Вересень - літо
-      baseTemp = 15 + Math.random() * 15; // від +15 до +30
-    } else { // Жовтень, Листопад - осінь
-      baseTemp = 5 + Math.random() * 10; // від +5 до +15
+    if (month >= 11 || month <= 1) {
+      baseTemp = -2 + Math.random() * 8;
+    } else if (month >= 2 && month <= 4) {
+      baseTemp = 5 + Math.random() * 15;
+    } else if (month >= 5 && month <= 8) {
+      baseTemp = 15 + Math.random() * 15;
+    } else {
+      baseTemp = 5 + Math.random() * 10;
     }
     
     return {
-      aqi: aqi,
+      aqi: aqiResult.aqi,
+      dominant_pollutant: aqiResult.dominant,
+      aqi_breakdown: aqiResult.breakdown,
       pm25: pm25,
       pm10: pm10,
       no2: no2,
-      so2: Math.round(8 * variance() * 10) / 10,
-      co: Math.round(300 * variance()),
-      o3: Math.round(50 * variance() * 10) / 10,
+      so2: so2,
+      co: co,
+      o3: o3,
       temperature: parseFloat(baseTemp.toFixed(1)),
-      humidity: 50 + Math.round(Math.random() * 40), // 50-90%
+      humidity: 50 + Math.round(Math.random() * 40),
       timestamp: new Date(),
       source: 'mock'
     };
-  }
-
-  /**
-   * Розрахунок AQI з PM2.5
-   */
-  calculateAQIFromPM25(pm25) {
-    if (pm25 <= 12.0) {
-      return Math.round((50 / 12.0) * pm25);
-    } else if (pm25 <= 35.4) {
-      return Math.round(50 + ((100 - 50) / (35.4 - 12.0)) * (pm25 - 12.0));
-    } else if (pm25 <= 55.4) {
-      return Math.round(100 + ((150 - 100) / (55.4 - 35.4)) * (pm25 - 35.4));
-    } else if (pm25 <= 150.4) {
-      return Math.round(150 + ((200 - 150) / (150.4 - 55.4)) * (pm25 - 55.4));
-    } else if (pm25 <= 250.4) {
-      return Math.round(200 + ((300 - 200) / (250.4 - 150.4)) * (pm25 - 150.4));
-    } else {
-      return Math.round(300 + ((500 - 300) / (500.4 - 250.4)) * (pm25 - 250.4));
-    }
   }
 
   /**
@@ -193,29 +339,24 @@ class AirQualityService {
       let airQualityData;
       let weatherData = null;
       
-      // Спробуємо OpenWeather Air Quality
       try {
         airQualityData = await this.getOpenWeatherAirQuality(district.latitude, district.longitude);
         console.log(`✅ OpenWeather AQ успішно для ${district.name}`);
         
-        // ДОДАТКОВО отримуємо погоду (температуру)
         weatherData = await this.getWeatherData(district.latitude, district.longitude);
         if (weatherData) {
           console.log(`🌡️ Температура для ${district.name}: ${weatherData.temperature}°C`);
         }
       } catch (owError) {
         console.log(`⚠️ OpenWeather не вдалося для ${district.name}: ${owError.message}`);
-        // Використовуємо mock дані
         airQualityData = this.generateMockData(district);
         console.log(`🔧 Використано mock дані для ${district.name}`);
       }
 
-      // Комбінуємо дані про якість повітря та погоду
       const combinedData = {
         districtId: district.id,
         districtName: district.name,
         ...airQualityData,
-        // Додаємо дані про погоду якщо є
         temperature: weatherData ? parseFloat(weatherData.temperature.toFixed(1)) : airQualityData.temperature,
         humidity: weatherData ? weatherData.humidity : airQualityData.humidity,
         pressure: weatherData ? weatherData.pressure : null,
@@ -224,6 +365,8 @@ class AirQualityService {
 
       console.log(`✅ Фінальні дані для ${district.name}:`, {
         aqi: combinedData.aqi,
+        dominant: combinedData.dominant_pollutant,
+        pm25: combinedData.pm25,
         temperature: combinedData.temperature,
         source: combinedData.source
       });
@@ -233,7 +376,6 @@ class AirQualityService {
     } catch (error) {
       console.error(`❌ Критична помилка для району ${district.name}:`, error.message);
       
-      // Fallback на mock дані
       const mockData = this.generateMockData(district);
       return {
         districtId: district.id,

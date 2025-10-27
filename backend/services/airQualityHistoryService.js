@@ -13,27 +13,19 @@ class AirQualityHistoryService {
     return 'Hazardous';
   }
 
+  /**
+   * Зберегти поточні реальні дані в історію
+   */
   async saveCurrentDataToHistory() {
     try {
       console.log('💾 Збереження даних в історію...');
       const data = await airQualityService.getAllDistrictsAirQuality();
       
-      let savedCount = 0;
-      
       for (const districtData of data) {
-        console.log(`📊 Зберігаємо дані для району ${districtData.districtName} (ID: ${districtData.districtId}):`, {
-          aqi: districtData.aqi,
-          pm25: districtData.pm25,
-          temperature: districtData.temperature,
-          humidity: districtData.humidity,
-          source: districtData.source
-        });
-
         await query(
           `INSERT INTO air_quality_history 
-           (district_id, aqi, aqi_status, pm25, pm10, no2, so2, co, o3, 
-            temperature, humidity, pressure, wind_speed, measured_at, data_source)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+           (district_id, aqi, aqi_status, pm25, pm10, no2, so2, co, o3, measured_at, data_source, is_forecast)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
           [
             districtData.districtId,
             districtData.aqi,
@@ -44,26 +36,24 @@ class AirQualityHistoryService {
             districtData.so2 || 0,
             districtData.co || 0,
             districtData.o3 || 0,
-            districtData.temperature || null,
-            districtData.humidity || null,
-            districtData.pressure || null,
-            districtData.wind_speed || null,
             districtData.timestamp || new Date(),
-            districtData.source || 'openweather'
+            districtData.source || 'openweather',
+            false  // ← is_forecast = false для реальних даних
           ]
         );
-        
-        savedCount++;
       }
       
-      console.log(`✅ Збережено ${savedCount} нових записів для ${data.length} районів`);
-      return { success: true, count: data.length, savedRecords: savedCount };
+      console.log(`✅ Збережено дані для ${data.length} районів`);
+      return { success: true, count: data.length };
     } catch (error) {
       console.error('❌ Помилка збереження в історію:', error);
       throw error;
     }
   }
 
+  /**
+   * Отримати історію для району (БЕЗ прогнозів!)
+   */
   async getDistrictHistory(districtId, period = '24h') {
     try {
       const intervals = {
@@ -86,19 +76,17 @@ class AirQualityHistoryService {
           so2,
           co,
           o3,
-          temperature,
-          humidity,
-          pressure,
-          wind_speed,
           measured_at,
           data_source as source
         FROM air_quality_history
         WHERE district_id = $1 
           AND measured_at >= NOW() - INTERVAL '${interval}'
+          AND is_forecast = false
         ORDER BY measured_at ASC`,
         [districtId]
       );
 
+      console.log(`📊 Отримано ${result.rows.length} записів історії для району ${districtId} (період: ${period})`);
       return result.rows;
     } catch (error) {
       console.error('Помилка отримання історії:', error);
@@ -106,6 +94,9 @@ class AirQualityHistoryService {
     }
   }
 
+  /**
+   * Отримати статистику по району
+   */
   async getDistrictStats(districtId, period = '24h') {
     try {
       const intervals = {
@@ -119,25 +110,21 @@ class AirQualityHistoryService {
 
       const result = await query(
         `SELECT 
-          AVG(aqi)::numeric(10,2) as avg_aqi,
-          MAX(aqi) as max_aqi,
+          AVG(aqi) as avg_aqi,
           MIN(aqi) as min_aqi,
-          AVG(pm25)::numeric(10,2) as avg_pm25,
-          MAX(pm25)::numeric(10,2) as max_pm25,
-          MIN(pm25)::numeric(10,2) as min_pm25,
-          AVG(pm10)::numeric(10,2) as avg_pm10,
-          MAX(pm10)::numeric(10,2) as max_pm10,
-          MIN(pm10)::numeric(10,2) as min_pm10,
-          AVG(temperature)::numeric(5,2) as avg_temperature,
-          MAX(temperature)::numeric(5,2) as max_temperature,
-          MIN(temperature)::numeric(5,2) as min_temperature,
-          AVG(humidity)::numeric(5,2) as avg_humidity,
-          MAX(humidity) as max_humidity,
-          MIN(humidity) as min_humidity,
-          COUNT(*) as measurements_count
+          MAX(aqi) as max_aqi,
+          AVG(pm25) as avg_pm25,
+          MIN(pm25) as min_pm25,
+          MAX(pm25) as max_pm25,
+          AVG(pm10) as avg_pm10,
+          MIN(pm10) as min_pm10,
+          MAX(pm10) as max_pm10,
+          COUNT(*) as total_records
         FROM air_quality_history
         WHERE district_id = $1 
-          AND measured_at >= NOW() - INTERVAL '${interval}'`,
+          AND measured_at >= NOW() - INTERVAL '${interval}'
+          AND is_forecast = false
+        `,
         [districtId]
       );
 
@@ -148,53 +135,82 @@ class AirQualityHistoryService {
     }
   }
 
-  async cleanOldData() {
+  /**
+   * Очистити старі записи (старші ніж X днів)
+   */
+  async cleanOldRecords(daysToKeep = 30) {
     try {
-      console.log('🗑️ Очищення старих даних...');
+      console.log(`🧹 Очищення записів старіших ${daysToKeep} днів...`);
       
-      // Видаляємо дані старіші за 90 днів
       const result = await query(
         `DELETE FROM air_quality_history 
-         WHERE measured_at < NOW() - INTERVAL '90 days'`
+         WHERE measured_at < NOW() - INTERVAL '${daysToKeep} days'
+         RETURNING id`,
+        []
       );
-      
-      console.log(`✅ Видалено ${result.rowCount} старих записів (>90 днів)`);
-      return { deleted: result.rowCount };
+
+      console.log(`✅ Видалено ${result.rows.length} старих записів`);
+      return { success: true, deleted: result.rows.length };
     } catch (error) {
-      console.error('❌ Помилка очищення старих даних:', error);
+      console.error('❌ Помилка очищення старих записів:', error);
       throw error;
     }
   }
 
-  async getLatestData(districtId) {
+  /**
+   * Отримати прогнози для району (тільки is_forecast = true)
+   */
+  async getDistrictForecasts(districtId, hours = 24) {
     try {
       const result = await query(
         `SELECT 
-          aqh.aqi,
-          aqh.pm25,
-          aqh.pm10,
-          aqh.no2,
-          aqh.so2,
-          aqh.co,
-          aqh.o3,
-          aqh.temperature,
-          aqh.humidity,
-          aqh.pressure,
-          aqh.wind_speed,
-          aqh.measured_at,
-          aqh.data_source as source,
-          d.name as district_name
-        FROM air_quality_history aqh
-        JOIN districts d ON aqh.district_id = d.id
-        WHERE aqh.district_id = $1
-        ORDER BY aqh.measured_at DESC
-        LIMIT 1`,
+          id,
+          aqi,
+          aqi_status,
+          pm25,
+          pm10,
+          no2,
+          so2,
+          co,
+          o3,
+          measured_at,
+          confidence_level
+        FROM air_quality_history
+        WHERE district_id = $1 
+          AND is_forecast = true
+          AND measured_at >= NOW()
+          AND measured_at <= NOW() + INTERVAL '${hours} hours'
+        ORDER BY measured_at ASC`,
         [districtId]
       );
 
-      return result.rows[0] || null;
+      console.log(`🔮 Отримано ${result.rows.length} прогнозів для району ${districtId}`);
+      return result.rows;
     } catch (error) {
-      console.error('Помилка отримання останніх даних:', error);
+      console.error('Помилка отримання прогнозів:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Видалити старі прогнози (які вже в минулому)
+   */
+  async cleanOldForecasts() {
+    try {
+      console.log('🧹 Очищення старих прогнозів...');
+      
+      const result = await query(
+        `DELETE FROM air_quality_history 
+         WHERE is_forecast = true 
+           AND measured_at < NOW()
+         RETURNING id`,
+        []
+      );
+
+      console.log(`✅ Видалено ${result.rows.length} старих прогнозів`);
+      return { success: true, deleted: result.rows.length };
+    } catch (error) {
+      console.error('❌ Помилка очищення прогнозів:', error);
       throw error;
     }
   }

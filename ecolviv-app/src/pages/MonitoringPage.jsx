@@ -1,12 +1,10 @@
 // src/pages/MonitoringPage.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import AirQualityDetails from '../components/AirQualityDetails/AirQualityDetails';
 import AirQualityChart from '../components/AirQualityChart/AirQualityChart';
 import './MonitoringPage.css';
 
 const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict }) => {
-  const [timeRange, setTimeRange] = useState('24h');
-
   const getAQIColor = (aqi) => {
     if (aqi <= 50) return '#10b981';
     if (aqi <= 100) return '#f59e0b';
@@ -34,23 +32,6 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict }) =>
             Детальна інформація про стан повітря в районах Львова
           </p>
         </header>
-
-        {/* Фільтри */}
-        <div className="monitoring-filters">
-          <div className="filter-group">
-            <label>Часовий діапазон:</label>
-            <select 
-              value={timeRange} 
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="filter-select"
-            >
-              <option value="1h">Остання година</option>
-              <option value="24h">Останні 24 години</option>
-              <option value="7d">Останні 7 днів</option>
-              <option value="30d">Останні 30 днів</option>
-            </select>
-          </div>
-        </div>
 
         {/* Список районів */}
         <div className="districts-list">
@@ -102,13 +83,10 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict }) =>
         {selectedDistrict && (
           <div className="selected-district-details">
             <AirQualityDetails district={selectedDistrict} />
-
-            {/* ДОДАЙ ГРАФІК */}
             <AirQualityChart 
               districtId={selectedDistrict.id} 
               districtName={selectedDistrict.name}
             />
-
           </div>
         )}
 

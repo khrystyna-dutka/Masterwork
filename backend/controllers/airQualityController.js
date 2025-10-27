@@ -81,7 +81,7 @@ exports.getDistricts = async (req, res) => {
 };
 
 /**
- * Отримати історію даних для району
+ * Отримати історію даних для району (БЕЗ прогнозів)
  */
 exports.getDistrictHistory = async (req, res) => {
   try {

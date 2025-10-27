@@ -22,7 +22,7 @@ def index():
     return jsonify({
         'success': True,
         'message': 'EcoLviv ML Service is running! 🤖',
-        'version': '1.0.0',
+        'version': '2.0.0 - Multi-Output',
         'endpoints': {
             'health': '/health',
             'forecast': '/api/forecast/<district_id>',
@@ -53,18 +53,11 @@ def health():
 
 @app.route('/api/forecast/<int:district_id>', methods=['GET'])
 def get_forecast(district_id):
-    """
-    Отримати прогноз для району
-    
-    Query params:
-        hours (int): Кількість годин для прогнозу (default: 24)
-        save (bool): Зберегти прогноз в БД (default: true)
-    """
+    """Отримати прогноз для району (ВСІ параметри)"""
     try:
         hours = request.args.get('hours', Config.FORECAST_HOURS, type=int)
         save_to_db = request.args.get('save', 'true').lower() == 'true'
         
-        # Валідація
         if district_id < 1 or district_id > 6:
             return jsonify({
                 'success': False,
@@ -77,7 +70,7 @@ def get_forecast(district_id):
                 'error': 'Invalid hours. Must be between 1 and 168'
             }), 400
         
-        print(f"\n📍 Запит прогнозу для району {district_id} на {hours} годин")
+        print(f"\n📍 Запит MULTI-OUTPUT прогнозу для району {district_id} на {hours} годин")
         
         # 1. Завантажити модель
         model = LSTMForecastModel(district_id)
@@ -89,79 +82,56 @@ def get_forecast(district_id):
             }), 404
         
         # 2. Отримати останні дані
-        df = db.get_latest_data(district_id, hours=Config.SEQUENCE_LENGTH)
+        latest_data = db.get_latest_data(district_id, hours=Config.SEQUENCE_LENGTH)
         
-        if len(df) < Config.SEQUENCE_LENGTH:
+        if len(latest_data) < Config.SEQUENCE_LENGTH:
             return jsonify({
                 'success': False,
-                'error': f'Not enough data. Need at least {Config.SEQUENCE_LENGTH} records.',
-                'available': len(df)
+                'error': f'Not enough recent data. Need {Config.SEQUENCE_LENGTH} hours, have {len(latest_data)}',
+                'required': Config.SEQUENCE_LENGTH,
+                'available': len(latest_data)
             }), 400
         
         # 3. Підготувати дані
         preprocessor = DataPreprocessor(district_id)
-        prepared_data = preprocessor.prepare_data(df)
+        prepared_data = preprocessor.prepare_data(latest_data)
         
-        if prepared_data is None or prepared_data.empty:
+        try:
+            normalized_data = preprocessor.normalize_data(prepared_data.values, fit=False)
+        except Exception as e:
+            print(f"⚠️ Помилка нормалізації: {e}")
             return jsonify({
                 'success': False,
-                'error': 'Data preparation failed'
-            }), 500
+                'error': 'Scaler not found. Please train the model first.'
+            }), 404
         
-        # 4. Нормалізувати
-        normalized_data = preprocessor.normalize_data(prepared_data.values, fit=False)
-        
-        # 5. Взяти останню послідовність
+        # Остання послідовність
         last_sequence = normalized_data[-Config.SEQUENCE_LENGTH:]
         
-        # 6. Прогноз
-        predictions = model.predict_future(last_sequence, n_hours=hours)
+        # 4. Зробити MULTI-OUTPUT прогноз (всі параметри одночасно!)
+        forecast_df = model.predict_future(
+            last_sequence=last_sequence,
+            n_hours=hours
+        )
         
-        # 7. Повернути до оригінального масштабу
-        predicted_pm25 = preprocessor.inverse_transform_predictions(predictions)
+        # 5. Перетворити в JSON
+        forecasts = forecast_df.to_dict('records')
         
-        # 8. Створити DataFrame з прогнозами
-        last_timestamp = df['measured_at'].max()
-        forecast_times = [last_timestamp + timedelta(hours=i+1) for i in range(hours)]
+        for f in forecasts:
+            if isinstance(f['measured_at'], pd.Timestamp):
+                f['measured_at'] = f['measured_at'].isoformat()
         
-        forecasts = []
-        for i, (time, pm25) in enumerate(zip(forecast_times, predicted_pm25)):
-            aqi, aqi_status = preprocessor.calculate_aqi_from_pm25(pm25)
-            
-            forecasts.append({
-                'hour': i + 1,
-                'measured_at': time.isoformat(),
-                'pm25': round(float(pm25), 2),
-                'aqi': int(aqi),
-                'aqi_status': aqi_status,
-                'confidence_level': 0.85
-            })
-        
-        # 9. Зберегти прогнози в БД
+        # 6. Зберегти
         if save_to_db:
-            forecast_df = pd.DataFrame(forecasts)
-            forecast_df['measured_at'] = pd.to_datetime(forecast_df['measured_at'])
-            
-            # Додаємо інші поля для БД
-            forecast_df['pm10'] = None
-            forecast_df['no2'] = None
-            forecast_df['so2'] = None
-            forecast_df['co'] = None
-            forecast_df['o3'] = None
-            forecast_df['temperature'] = None
-            forecast_df['humidity'] = None
-            forecast_df['pressure'] = None
-            forecast_df['wind_speed'] = None
-            forecast_df['wind_direction'] = None
-            
             db.save_forecast(district_id, forecast_df)
         
-        print(f"✅ Прогноз створено успішно")
+        print(f"✅ Multi-output прогноз створено!")
         
         return jsonify({
             'success': True,
             'district_id': district_id,
             'forecast_hours': hours,
+            'model_type': 'Multi-Output LSTM',
             'forecasts': forecasts,
             'generated_at': datetime.now().isoformat()
         })
@@ -187,7 +157,6 @@ def get_forecast_all():
         for district in Config.DISTRICTS:
             district_id = district['id']
             try:
-                # Використовуємо той самий код що й для одного району
                 model = LSTMForecastModel(district_id)
                 if not model.load_model():
                     errors.append({
@@ -197,50 +166,40 @@ def get_forecast_all():
                     })
                     continue
                 
-                df = db.get_latest_data(district_id, hours=Config.SEQUENCE_LENGTH)
+                latest_data = db.get_latest_data(district_id, hours=Config.SEQUENCE_LENGTH)
                 
-                if len(df) < Config.SEQUENCE_LENGTH:
+                if len(latest_data) < Config.SEQUENCE_LENGTH:
                     errors.append({
                         'district_id': district_id,
                         'district_name': district['name'],
-                        'error': 'Not enough data'
+                        'error': f'Not enough data: {len(latest_data)}/{Config.SEQUENCE_LENGTH}'
                     })
                     continue
                 
                 preprocessor = DataPreprocessor(district_id)
-                prepared_data = preprocessor.prepare_data(df)
-                normalized_data = preprocessor.normalize_data(prepared_data.values, fit=False)
-                last_sequence = normalized_data[-Config.SEQUENCE_LENGTH:]
-                predictions = model.predict_future(last_sequence, n_hours=hours)
-                predicted_pm25 = preprocessor.inverse_transform_predictions(predictions)
+                prepared_data = preprocessor.prepare_data(latest_data)
                 
-                last_timestamp = df['measured_at'].max()
-                forecast_times = [last_timestamp + timedelta(hours=i+1) for i in range(hours)]
-                
-                forecasts = []
-                for i, (time, pm25) in enumerate(zip(forecast_times, predicted_pm25)):
-                    aqi, aqi_status = preprocessor.calculate_aqi_from_pm25(pm25)
-                    forecasts.append({
-                        'hour': i + 1,
-                        'measured_at': time.isoformat(),
-                        'pm25': round(float(pm25), 2),
-                        'aqi': int(aqi),
-                        'aqi_status': aqi_status
+                try:
+                    normalized_data = preprocessor.normalize_data(prepared_data.values, fit=False)
+                except Exception as e:
+                    errors.append({
+                        'district_id': district_id,
+                        'district_name': district['name'],
+                        'error': f'Scaler error: {str(e)}'
                     })
+                    continue
+                
+                last_sequence = normalized_data[-Config.SEQUENCE_LENGTH:]
+                
+                # Multi-output прогноз
+                forecast_df = model.predict_future(last_sequence, hours)
+                forecasts = forecast_df.to_dict('records')
+                
+                for f in forecasts:
+                    if isinstance(f['measured_at'], pd.Timestamp):
+                        f['measured_at'] = f['measured_at'].isoformat()
                 
                 if save_to_db:
-                    forecast_df = pd.DataFrame(forecasts)
-                    forecast_df['measured_at'] = pd.to_datetime(forecast_df['measured_at'])
-                    forecast_df['pm10'] = None
-                    forecast_df['no2'] = None
-                    forecast_df['so2'] = None
-                    forecast_df['co'] = None
-                    forecast_df['o3'] = None
-                    forecast_df['temperature'] = None
-                    forecast_df['humidity'] = None
-                    forecast_df['pressure'] = None
-                    forecast_df['wind_speed'] = None
-                    forecast_df['wind_direction'] = None
                     db.save_forecast(district_id, forecast_df)
                 
                 results.append({
@@ -261,6 +220,7 @@ def get_forecast_all():
             'total_districts': len(Config.DISTRICTS),
             'successful': len(results),
             'failed': len(errors),
+            'model_type': 'Multi-Output LSTM',
             'results': results,
             'errors': errors if errors else None,
             'generated_at': datetime.now().isoformat()
@@ -275,22 +235,19 @@ def get_forecast_all():
 
 @app.route('/api/train/<int:district_id>', methods=['POST'])
 def train_model(district_id):
-    """Тренувати модель для конкретного району"""
+    """Тренувати Multi-Output модель для району"""
     try:
-        # Валідація
         if district_id < 1 or district_id > 6:
             return jsonify({
                 'success': False,
                 'error': 'Invalid district_id'
             }), 400
         
-        # Параметри з request
         days = request.json.get('days', 30) if request.json else 30
         epochs = request.json.get('epochs', 50) if request.json else 50
         
-        print(f"\n🎯 Тренування моделі для району {district_id}")
+        print(f"\n🎯 Тренування Multi-Output моделі для району {district_id}")
         
-        # 1. Отримати дані
         df = db.get_historical_data(district_id, days=days)
         
         if len(df) < Config.SEQUENCE_LENGTH + 10:
@@ -300,46 +257,41 @@ def train_model(district_id):
                 'available': len(df)
             }), 400
         
-        # 2. Підготувати дані
+        # Підготувати дані
         preprocessor = DataPreprocessor(district_id)
         prepared_data = preprocessor.prepare_data(df)
         normalized_data = preprocessor.normalize_data(prepared_data.values, fit=True)
         
-        # 3. Створити послідовності
-        X, y = preprocessor.create_sequences(normalized_data, Config.SEQUENCE_LENGTH)
+        # Створити multi-output послідовності
+        X, y_dict = preprocessor.create_multi_output_sequences(normalized_data, Config.SEQUENCE_LENGTH)
         
-        # 4. Розділити на train/val
+        # Розділити
         split_idx = int(len(X) * 0.8)
         X_train, X_val = X[:split_idx], X[split_idx:]
-        y_train, y_val = y[:split_idx], y[split_idx:]
         
-        # 5. Тренувати модель
+        y_train_dict = {k: v[:split_idx] for k, v in y_dict.items()}
+        y_val_dict = {k: v[split_idx:] for k, v in y_dict.items()}
+        
+        # Тренувати
         model = LSTMForecastModel(district_id)
         model.build_model(input_shape=(X_train.shape[1], X_train.shape[2]))
+        history = model.train(X_train, y_train_dict, X_val, y_val_dict, epochs=epochs, batch_size=16)
         
-        history = model.train(
-            X_train, y_train,
-            X_val, y_val,
-            epochs=epochs,
-            batch_size=16
-        )
-        
-        # 6. Оцінити модель
-        metrics = model.evaluate(X_val, y_val)
+        # Оцінити
+        metrics = model.evaluate(X_val, y_val_dict)
         
         return jsonify({
             'success': True,
             'district_id': district_id,
+            'model_type': 'Multi-Output LSTM',
             'training_records': len(df),
-            'sequences_created': len(X),
-            'epochs_trained': len(history.history['loss']),
+            'epochs': len(history.history['loss']),
             'metrics': metrics,
-            'model_path': model.model_path,
             'trained_at': datetime.now().isoformat()
         })
         
     except Exception as e:
-        print(f"❌ Помилка тренування: {str(e)}")
+        print(f"❌ Помилка: {str(e)}")
         traceback.print_exc()
         return jsonify({
             'success': False,
@@ -348,7 +300,7 @@ def train_model(district_id):
 
 @app.route('/api/train/all', methods=['POST'])
 def train_all_models():
-    """Тренувати моделі для всіх районів"""
+    """Тренувати Multi-Output моделі для всіх районів"""
     try:
         days = request.json.get('days', 30) if request.json else 30
         epochs = request.json.get('epochs', 50) if request.json else 50
@@ -359,7 +311,7 @@ def train_all_models():
         for district in Config.DISTRICTS:
             district_id = district['id']
             try:
-                print(f"\n🎯 Тренування району {district_id}: {district['name']}")
+                print(f"\n🎯 Multi-Output тренування для району {district_id} ({district['name']})")
                 
                 df = db.get_historical_data(district_id, days=days)
                 
@@ -367,24 +319,27 @@ def train_all_models():
                     errors.append({
                         'district_id': district_id,
                         'district_name': district['name'],
-                        'error': 'Not enough data'
+                        'error': f'Not enough data: {len(df)}'
                     })
                     continue
                 
                 preprocessor = DataPreprocessor(district_id)
                 prepared_data = preprocessor.prepare_data(df)
                 normalized_data = preprocessor.normalize_data(prepared_data.values, fit=True)
-                X, y = preprocessor.create_sequences(normalized_data, Config.SEQUENCE_LENGTH)
+                
+                X, y_dict = preprocessor.create_multi_output_sequences(normalized_data, Config.SEQUENCE_LENGTH)
                 
                 split_idx = int(len(X) * 0.8)
                 X_train, X_val = X[:split_idx], X[split_idx:]
-                y_train, y_val = y[:split_idx], y[split_idx:]
+                
+                y_train_dict = {k: v[:split_idx] for k, v in y_dict.items()}
+                y_val_dict = {k: v[split_idx:] for k, v in y_dict.items()}
                 
                 model = LSTMForecastModel(district_id)
                 model.build_model(input_shape=(X_train.shape[1], X_train.shape[2]))
-                model.train(X_train, y_train, X_val, y_val, epochs=epochs, batch_size=16)
+                model.train(X_train, y_train_dict, X_val, y_val_dict, epochs=epochs, batch_size=16)
                 
-                metrics = model.evaluate(X_val, y_val)
+                metrics = model.evaluate(X_val, y_val_dict)
                 
                 results.append({
                     'district_id': district_id,
@@ -405,6 +360,7 @@ def train_all_models():
             'total_districts': len(Config.DISTRICTS),
             'successful': len(results),
             'failed': len(errors),
+            'model_type': 'Multi-Output LSTM',
             'results': results,
             'errors': errors if errors else None,
             'trained_at': datetime.now().isoformat()
@@ -430,7 +386,6 @@ def get_model_info(district_id):
         model = LSTMForecastModel(district_id)
         info = model.get_model_info()
         
-        # Додати статистику по даних
         stats = db.get_data_stats(district_id)
         info['data_stats'] = stats
         
@@ -471,11 +426,13 @@ def get_district_stats(district_id):
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("🚀 Starting EcoLviv ML Service")
+    print("🚀 Starting EcoLviv ML Service v2.0")
+    print("   📊 Multi-Output LSTM Model")
     print("="*60)
     print(f"📍 Port: {Config.FLASK_PORT}")
     print(f"🔧 Debug: {Config.FLASK_DEBUG}")
     print(f"💾 Model path: {Config.MODEL_PATH}")
+    print(f"🎯 Outputs: PM2.5, PM10, NO2, SO2, CO, O3")
     print("="*60 + "\n")
     
     app.run(
