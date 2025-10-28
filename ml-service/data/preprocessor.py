@@ -97,24 +97,43 @@ class DataPreprocessor:
     
     def create_sequences(self, data, sequence_length):
         """
-        Створити послідовності для LSTM (СТАРИЙ метод - для сумісності)
+        Створити послідовності для LSTM
         
         Args:
-            data: Нормалізовані дані
+            data: Нормалізовані дані (numpy array)
             sequence_length: Довжина послідовності
         
         Returns:
-            X: послідовності (samples, sequence_length, features)
-            y: цільові значення PM2.5
+            X, y: Масиви послідовностей та цільових значень
         """
-        X, y = [], []
+        X = []
+        y = []
+        
+        # Індекси для output features в даних
+        # feature_columns = ['pm25', 'temperature', 'humidity', 'pm10', 'no2', 'so2', 'co', 'o3']
+        # output_features = ['pm25', 'pm10', 'no2', 'so2', 'co', 'o3']
+        # Індекси: pm25=0, pm10=3, no2=4, so2=5, co=6, o3=7
+        output_indices = [0, 3, 4, 5, 6, 7]
         
         for i in range(len(data) - sequence_length):
-            X.append(data[i:i + sequence_length])
-            # PM2.5 на першій позиції
-            y.append(data[i + sequence_length, 0])
+            # Вхідна послідовність (всі 8 features)
+            X_seq = data[i:i + sequence_length]
+            
+            # Цільове значення (тільки 6 features які прогнозуємо)
+            y_target = data[i + sequence_length]
+            y_values = y_target[output_indices]  # Вибрати тільки потрібні features
+            
+            X.append(X_seq)
+            y.append(y_values)
         
-        return np.array(X), np.array(y)
+        X = np.array(X)
+        y = np.array(y)
+        
+        print(f"✅ Створено {len(X)} послідовностей")
+        print(f"   📐 Форма X: {X.shape} (samples, sequence_length, features)")
+        print(f"   📐 Форма y: {y.shape} (samples, output_features)")
+        
+        return X, y
     
     def create_multi_output_sequences(self, data, sequence_length):
         """

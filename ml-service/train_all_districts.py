@@ -1,3 +1,4 @@
+# ml-service/train_all_districts.py
 import requests
 import json
 from config import Config
@@ -13,8 +14,8 @@ def train_all_districts():
     
     # Параметри тренування
     training_params = {
-        "days": 7,      # Використовуємо всі доступні дані (7 днів)
-        "epochs": 30    # 30 епох для швидкого тренування
+        "days": 365,    # Всі доступні дані
+        "epochs": 20    # 20 епох (для малого датасету)
     }
     
     results = []
@@ -41,16 +42,31 @@ def train_all_districts():
                 
                 if data.get('success'):
                     print(f"✅ Тренування успішне!")
-                    print(f"   📊 Записів: {data.get('training_records')}")
-                    print(f"   🔄 Епох: {data.get('epochs_trained')}")
-                    print(f"   📉 Loss: {data.get('metrics', {}).get('loss', 'N/A'):.4f}")
-                    print(f"   📈 MAE: {data.get('metrics', {}).get('mae', 'N/A'):.4f}")
+                    print(f"   📊 Записів: {data.get('training_records', 'N/A')}")
+                    
+                    epochs = data.get('epochs_trained') or data.get('epochs')
+                    print(f"   🔄 Епох: {epochs if epochs else 'N/A'}")
+                    
+                    # Безпечне форматування метрик
+                    metrics = data.get('metrics', {})
+                    
+                    if isinstance(metrics, dict):
+                        # Avg MAE
+                        avg_mae = metrics.get('avg_mae')
+                        if avg_mae and isinstance(avg_mae, (int, float)):
+                            print(f"   📈 Avg MAE: {avg_mae:.4f}")
+                        
+                        # PM2.5 MAE
+                        pm25_mae = metrics.get('pm25_mae')
+                        if pm25_mae and isinstance(pm25_mae, (int, float)):
+                            print(f"   💨 PM2.5 MAE: {pm25_mae:.4f}")
                     
                     results.append({
                         'district_id': district_id,
                         'district_name': district_name,
                         'status': 'success',
-                        'metrics': data.get('metrics')
+                        'metrics': metrics,
+                        'records': data.get('training_records', 0)
                     })
                 else:
                     error_msg = data.get('error', 'Unknown error')
@@ -61,7 +77,7 @@ def train_all_districts():
                         'error': error_msg
                     })
             else:
-                error_data = response.json()
+                error_data = response.json() if response.text else {}
                 error_msg = error_data.get('error', f'HTTP {response.status_code}')
                 print(f"❌ Помилка: {error_msg}")
                 errors.append({
@@ -79,6 +95,8 @@ def train_all_districts():
             })
         except Exception as e:
             print(f"❌ Помилка: {str(e)}")
+            import traceback
+            traceback.print_exc()
             errors.append({
                 'district_id': district_id,
                 'district_name': district_name,
@@ -96,8 +114,12 @@ def train_all_districts():
         print("\n🎉 Успішно натреновані райони:")
         for r in results:
             print(f"   • {r['district_name']} (ID: {r['district_id']})")
-            if r.get('metrics'):
-                print(f"     Loss: {r['metrics'].get('loss', 'N/A'):.4f}, MAE: {r['metrics'].get('mae', 'N/A'):.4f}")
+            print(f"     Записів: {r.get('records', 'N/A')}")
+            
+            if r.get('metrics') and isinstance(r['metrics'], dict):
+                avg_mae = r['metrics'].get('avg_mae')
+                if avg_mae and isinstance(avg_mae, (int, float)):
+                    print(f"     Avg MAE: {avg_mae:.4f}")
     
     if errors:
         print("\n⚠️ Райони з помилками:")
@@ -105,6 +127,15 @@ def train_all_districts():
             print(f"   • {e['district_name']} (ID: {e['district_id']}): {e['error']}")
     
     print("\n" + "=" * 60)
+    
+    if len(results) > 0:
+        print("✅ Моделі збережено в: ml-service/trained_models/")
+        print("\n💡 Наступні кроки:")
+        print("   1. Моделі готові для прогнозування")
+        print("   2. Можеш тестувати через API: GET /api/forecast/<district_id>")
+        print("   3. Для онлайн-навчання треба додати feedback систему")
+    
+    print("=" * 60)
 
 if __name__ == "__main__":
     # Перевірка чи запущений ML сервіс
