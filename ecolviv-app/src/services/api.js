@@ -46,15 +46,13 @@ export const authAPI = {
   updateProfile: (userData) => api.put('/auth/profile', userData)
 };
 
+// Forecast API
 export const forecastAPI = {
   getDistrictForecast: (districtId, hours = 24) => 
     api.get(`/forecast/district/${districtId}?hours=${hours}`),
   
   getAllForecasts: (hours = 24) => 
     api.get(`/forecast/all?hours=${hours}`),
-  
-  getModelInfo: (districtId) => 
-    api.get(`/forecast/model/${districtId}`),
   
   mlHealthCheck: () => 
     api.get('/forecast/health')

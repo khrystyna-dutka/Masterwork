@@ -45,11 +45,37 @@ class AirQualityHistoryService {
       
       console.log(`✅ Збережено дані для ${data.length} районів`);
       return { success: true, count: data.length };
+      await this.triggerMLCheck();
+
     } catch (error) {
       console.error('❌ Помилка збереження в історію:', error);
       throw error;
     }
   }
+
+  async triggerMLCheck() {
+  try {
+    console.log('🤖 Запуск ML перевірки...');
+    
+    const response = await axios.post('http://localhost:5001/api/monitor/all', {
+      timeout: 30000
+    });
+    
+    if (response.data.success) {
+      const retrainedCount = response.data.results.filter(r => r.retrained).length;
+      
+      if (retrainedCount > 0) {
+        console.log(`🔄 Перенавчано ${retrainedCount} моделей`);
+      } else {
+        console.log('✅ Всі моделі працюють нормально');
+      }
+    }
+    
+  } catch (error) {
+    console.error('⚠️ ML перевірка недоступна:', error.message);
+    // Не падаємо - ML перевірка необов'язкова
+  }
+}
 
   /**
    * Отримати історію для району (БЕЗ прогнозів!)
@@ -58,7 +84,9 @@ class AirQualityHistoryService {
     try {
       const intervals = {
         '1h': '1 hour',
+        '12h': '12 hours',   // ⬅️ ДОДАЙ
         '24h': '24 hours',
+        '48h': '48 hours',   // ⬅️ ДОДАЙ
         '7d': '7 days',
         '30d': '30 days'
       };
@@ -101,7 +129,9 @@ class AirQualityHistoryService {
     try {
       const intervals = {
         '1h': '1 hour',
+        '12h': '12 hours',
         '24h': '24 hours',
+        '48h': '48 hours',
         '7d': '7 days',
         '30d': '30 days'
       };

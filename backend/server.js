@@ -30,6 +30,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/forecast', forecastRoutes);
+console.log('✅ Forecast routes підключено');
 
 // Базовий маршрут
 app.get('/', (req, res) => {

@@ -11,18 +11,16 @@ import {
     ResponsiveContainer,
     ReferenceLine
 } from 'recharts';
-import { airQualityAPI } from '../../services/api';
-import axios from 'axios';
+import { airQualityAPI, forecastAPI } from '../../services/api';
 import './AirQualityChart.css';
 
 const AirQualityChart = ({ districtId, districtName }) => {
-    const [historyData, setHistoryData] = useState([]);
-    const [forecastData, setForecastData] = useState([]);
-    const [stats, setStats] = useState(null);
+    const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [historyPeriod, setHistoryPeriod] = useState('24h');
-    const [forecastPeriod, setForecastPeriod] = useState('none'); // Вимкнено по замовчуванню
+    const [forecastPeriod, setForecastPeriod] = useState('none');
     const [selectedMetrics, setSelectedMetrics] = useState(['pm25', 'aqi']);
+    const [currentTime, setCurrentTime] = useState(null);
 
     const metrics = [
         { key: 'aqi', label: 'AQI', color: '#3b82f6' },
@@ -38,17 +36,47 @@ const AirQualityChart = ({ districtId, districtName }) => {
         try {
             setLoading(true);
 
+            // ⬇️ ДОДАЙ ЦЕЙ ЛОГ
+            console.log('🔄 Завантаження даних...');
+            console.log('  Район:', districtId);
+            console.log('  Період історії:', historyPeriod);
+            console.log('  Період прогнозу:', forecastPeriod);
+            console.log('  URL:', `/air-quality/district/${districtId}/history?period=${historyPeriod}`);
+
+
+            // 1. Завантажити історичні дані
             const historyResponse = await airQualityAPI.getDistrictHistory(districtId, historyPeriod);
 
-            const formattedHistory = historyResponse.data.data.map(item => ({
+            // ⬇️ ДОДАЙ ЦЕЙ ЛОГ
+            console.log('📦 Отримана відповідь:', historyResponse.data);
+            console.log('📊 Кількість записів:', historyResponse.data.data?.length);
+            
+            const historyData = historyResponse.data.data || [];
+
+            // 2. Завантажити прогнози (якщо увімкнено)
+            let forecastData = [];
+            if (forecastPeriod !== 'none') {
+                try {
+                    const hours = forecastPeriod === '12h' ? 12 : forecastPeriod === '24h' ? 24 : 48;
+                    const forecastResponse = await forecastAPI.getDistrictForecast(districtId, hours);
+                    
+                    if (forecastResponse.data.success) {
+                        forecastData = forecastResponse.data.data.forecasts || [];
+                    }
+                } catch (err) {
+                    console.warn('Прогнози недоступні:', err);
+                }
+            }
+
+            // 3. Форматувати історичні дані
+            const formattedHistory = historyData.map(item => ({
+                timestamp: new Date(item.measured_at).getTime(),
                 time: new Date(item.measured_at).toLocaleString('uk-UA', {
-                    day: 'numeric',
-                    month: 'short',
+                    day: '2-digit',
+                    month: '2-digit',
                     hour: '2-digit',
                     minute: '2-digit'
                 }),
-                timestamp: new Date(item.measured_at).getTime(),
-                fullDate: new Date(item.measured_at),
                 aqi: item.aqi,
                 pm25: parseFloat(item.pm25),
                 pm10: parseFloat(item.pm10),
@@ -56,68 +84,41 @@ const AirQualityChart = ({ districtId, districtName }) => {
                 so2: parseFloat(item.so2),
                 co: parseFloat(item.co) / 100,
                 o3: parseFloat(item.o3),
-                aqi_forecast: null,
-                pm25_forecast: null,
-                pm10_forecast: null,
-                no2_forecast: null,
-                so2_forecast: null,
-                co_forecast: null,
-                o3_forecast: null,
                 isForecast: false
             }));
 
-            setHistoryData(formattedHistory);
-            setStats(historyResponse.data.stats);
+            // 4. Форматувати прогнози
+            const formattedForecast = forecastData.map(item => ({
+                timestamp: new Date(item.measured_at).getTime(),
+                time: new Date(item.measured_at).toLocaleString('uk-UA', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                aqi: item.aqi,
+                pm25: parseFloat(item.pm25),
+                pm10: parseFloat(item.pm10),
+                no2: parseFloat(item.no2),
+                so2: parseFloat(item.so2),
+                co: parseFloat(item.co) / 100,
+                o3: parseFloat(item.o3),
+                isForecast: true
+            }));
 
-            if (forecastPeriod !== 'none') {
-                try {
-                    const hours = forecastPeriod === '12h' ? 12 : forecastPeriod === '24h' ? 24 : 48;
-                    const forecastResponse = await axios.get(
-                        `http://localhost:5001/api/forecast/${districtId}?hours=${hours}`
-                    );
+            // 5. Об'єднати та відсортувати
+            const combined = [...formattedHistory, ...formattedForecast]
+                .sort((a, b) => a.timestamp - b.timestamp);
 
-                    if (forecastResponse.data.success) {
-                        const now = new Date();
+            // 6. Визначити поточний час (останній запис історії)
+            const currentTimestamp = formattedHistory.length > 0 
+                ? formattedHistory[formattedHistory.length - 1].timestamp 
+                : Date.now();
 
-                        const formattedForecast = forecastResponse.data.forecasts
-                            .filter(item => new Date(item.measured_at) > now)
-                            .map(item => ({
-                                time: new Date(item.measured_at).toLocaleString('uk-UA', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                }),
-                                timestamp: new Date(item.measured_at).getTime(),
-                                fullDate: new Date(item.measured_at),
-                                aqi: null,
-                                pm25: null,
-                                pm10: null,
-                                no2: null,
-                                so2: null,
-                                co: null,
-                                o3: null,
-                                aqi_forecast: item.aqi,
-                                pm25_forecast: parseFloat(item.pm25),
-                                pm10_forecast: parseFloat(item.pm10),
-                                no2_forecast: parseFloat(item.no2),
-                                so2_forecast: parseFloat(item.so2),
-                                co_forecast: parseFloat(item.co) / 100,
-                                o3_forecast: parseFloat(item.o3),
-                                isForecast: true
-                            }));
-
-                        setForecastData(formattedForecast);
-                    }
-                } catch (error) {
-                    console.error('Помилка завантаження прогнозу:', error);
-                    setForecastData([]);
-                }
-            } else {
-                setForecastData([]);
-            }
-
+            setChartData(combined);
+            setCurrentTime(currentTimestamp);
             setLoading(false);
+
         } catch (error) {
             console.error('Помилка завантаження даних:', error);
             setLoading(false);
@@ -136,267 +137,181 @@ const AirQualityChart = ({ districtId, districtName }) => {
         );
     };
 
-    // Кастомний formatter для показу тільки цілих годин
-    const formatXAxisTick = (value, index, data) => {
-        const item = data?.[index];
-        if (!item || !item.fullDate) return '';
-
-        const date = item.fullDate;
-        const minutes = date.getMinutes();
-
-        // Показувати тільки цілі години
-        if (minutes === 0) {
-            return date.toLocaleString('uk-UA', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-        return '';
-    };
-
     if (loading) {
         return (
-            <div className="chart-loading">
-                <div className="spinner"></div>
-                <p>Завантаження даних...</p>
+            <div className="air-quality-chart">
+                <div className="chart-loading">
+                    <div className="spinner"></div>
+                    <p>Завантаження даних...</p>
+                </div>
             </div>
         );
     }
 
-    if (historyData.length === 0) {
+    if (chartData.length === 0) {
         return (
-            <div className="chart-no-data">
-                <p>📊 Недостатньо даних для побудови графіка</p>
-                <p className="hint">Дані збираються щогодини. Зачекайте трохи...</p>
+            <div className="air-quality-chart">
+                <div className="chart-no-data">
+                    <p>📊 Недостатньо даних для побудови графіка</p>
+                </div>
             </div>
         );
     }
-
-    const combinedData = [...historyData, ...forecastData].sort((a, b) => a.timestamp - b.timestamp);
-    const lastHistoryPoint = historyData.length > 0 ? historyData[historyData.length - 1] : null;
 
     return (
         <div className="air-quality-chart">
+            {/* Header */}
             <div className="chart-header">
                 <h3>📈 Графік якості повітря - {districtName}</h3>
+            </div>
 
-                <div className="chart-controls-grid">
-                    <div className="control-group">
-                        <label className="control-label">📊 Історія (назад від зараз):</label>
-                        <div className="period-selector">
-                            {['1h', '12h', '24h', '48h', '7d', '30d'].map(p => (
-                                <button
-                                    key={p}
-                                    className={`period-btn ${historyPeriod === p ? 'active' : ''}`}
-                                    onClick={() => setHistoryPeriod(p)}
-                                >
-                                    {p === '1h' ? '1 год' : p === '12h' ? '12 год' : p === '24h' ? '24 год' : p === '48h' ? '48 год' : p === '7d' ? '7 днів' : '30 днів'}
-                                </button>
-                            ))}
-                        </div>
+            {/* Контроли */}
+            <div className="chart-controls-grid">
+                {/* Історія */}
+                <div className="control-group">
+                    <label className="control-label">📊 Історія (назад від зараз):</label>
+                    <div className="period-selector">
+                        {['1h', '12h', '24h', '48h'].map(p => (
+                            <button
+                                key={p}
+                                className={`period-btn ${historyPeriod === p ? 'active' : ''}`}
+                                onClick={() => setHistoryPeriod(p)}
+                            >
+                                {p === '1h' ? '1 год' : p === '12h' ? '12 год' : p === '24h' ? '24 год' : '48 год'}
+                            </button>
+                        ))}
                     </div>
+                </div>
 
-                    <div className="control-group">
-                        <label className="control-label">🔮 Прогноз (вперед від зараз):</label>
-                        <div className="period-selector">
-                            {['none', '12h', '24h', '48h'].map(p => (
-                                <button
-                                    key={p}
-                                    className={`period-btn ${forecastPeriod === p ? 'active' : ''}`}
-                                    onClick={() => setForecastPeriod(p)}
-                                >
-                                    {p === 'none' ? 'Вимкнено' : p === '12h' ? '12 год' : p === '24h' ? '24 год' : '48 год'}
-                                </button>
-                            ))}
-                        </div>
+                {/* Прогноз */}
+                <div className="control-group">
+                    <label className="control-label">🔮 Прогноз (вперед від зараз):</label>
+                    <div className="period-selector">
+                        {['none', '12h', '24h', '48h'].map(p => (
+                            <button
+                                key={p}
+                                className={`period-btn ${forecastPeriod === p ? 'active' : ''}`}
+                                onClick={() => setForecastPeriod(p)}
+                            >
+                                {p === 'none' ? 'Вимкнено' : p === '12h' ? '12 год' : p === '24h' ? '24 год' : '48 год'}
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>
 
-            {stats && (
-                <div className="chart-stats">
-                    <div className="stat-card">
-                        <span className="stat-label">Середній AQI:</span>
-                        <span className="stat-value">{parseFloat(stats.avg_aqi).toFixed(1)}</span>
-                    </div>
-                    <div className="stat-card">
-                        <span className="stat-label">Макс AQI:</span>
-                        <span className="stat-value">{stats.max_aqi}</span>
-                    </div>
-                    <div className="stat-card">
-                        <span className="stat-label">Мін AQI:</span>
-                        <span className="stat-value">{stats.min_aqi}</span>
-                    </div>
-                    <div className="stat-card">
-                        <span className="stat-label">Вимірювань:</span>
-                        <span className="stat-value">{historyData.length}</span>
-                    </div>
-                </div>
-            )}
-
+            {/* Вибір метрик */}
             <div className="metric-selector">
-                <label>Показники:</label>
-                {metrics.map(metric => (
-                    <button
-                        key={metric.key}
-                        className={`metric-btn ${selectedMetrics.includes(metric.key) ? 'active' : ''}`}
-                        style={{
-                            borderColor: selectedMetrics.includes(metric.key) ? metric.color : '#ddd',
-                            backgroundColor: selectedMetrics.includes(metric.key) ? `${metric.color}20` : 'white'
-                        }}
-                        onClick={() => toggleMetric(metric.key)}
-                    >
-                        {metric.label}
-                    </button>
-                ))}
+                <label>📊 Показати на графіку:</label>
+                <div className="metric-buttons">
+                    {metrics.map(metric => (
+                        <button
+                            key={metric.key}
+                            className={`metric-btn ${selectedMetrics.includes(metric.key) ? 'active' : ''}`}
+                            style={{
+                                borderColor: selectedMetrics.includes(metric.key) ? metric.color : '#e5e7eb',
+                                backgroundColor: selectedMetrics.includes(metric.key) ? metric.color + '20' : 'white'
+                            }}
+                            onClick={() => toggleMetric(metric.key)}
+                        >
+                            <span style={{ color: metric.color }}>●</span> {metric.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <ResponsiveContainer width="100%" height={450}>
-                <LineChart data={combinedData}>
+            {/* Графік */}
+            <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    
                     <XAxis
-                        dataKey="timestamp"
-                        type="number"
-                        domain={['dataMin', 'dataMax']}
-                        scale="time"
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                        fontSize={11}
+                        dataKey="time"
                         stroke="#6b7280"
-                        tickFormatter={(timestamp) => {
-                            const date = new Date(timestamp);
-                            return date.toLocaleString('uk-UA', {
-                                day: 'numeric',
-                                month: 'short',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
-                        }}
-                        ticks={(() => {
-                            // Генеруємо мітки для кожної години
-                            if (combinedData.length === 0) return [];
-
-                            const firstTimestamp = combinedData[0].timestamp;
-                            const lastTimestamp = combinedData[combinedData.length - 1].timestamp;
-                            const hourInMs = 60 * 60 * 1000;
-
-                            // Знайти першу цілу годину
-                            const firstHour = new Date(firstTimestamp);
-                            firstHour.setMinutes(0, 0, 0);
-                            if (firstHour.getTime() < firstTimestamp) {
-                                firstHour.setHours(firstHour.getHours() + 1);
-                            }
-
-                            const ticks = [];
-                            let currentTick = firstHour.getTime();
-
-                            while (currentTick <= lastTimestamp) {
-                                ticks.push(currentTick);
-                                currentTick += hourInMs;
-                            }
-
-                            return ticks;
-                        })()}
+                        tick={{ fontSize: 12 }}
+                        interval="preserveStartEnd"
                     />
+                    
                     <YAxis stroke="#6b7280" />
+                    
                     <Tooltip
                         contentStyle={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            backgroundColor: 'white',
                             border: '1px solid #e5e7eb',
                             borderRadius: '8px',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                        }}
-                        labelFormatter={(timestamp) => {
-                            const date = new Date(timestamp);
-                            return `Час: ${date.toLocaleString('uk-UA', {
-                                day: 'numeric',
-                                month: 'short',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            })}`;
-                        }}
-                        formatter={(value, name) => {
-                            if (value === null) return [null, null];
-                            const metricKey = name.replace('_forecast', '');
-                            const metric = metrics.find(m => m.key === metricKey);
-                            return [value.toFixed(2), metric?.label || name];
+                            padding: '12px'
                         }}
                     />
-                    <Legend
-                        wrapperStyle={{ paddingTop: '20px' }}
-                        payload={
-                            selectedMetrics.map(metricKey => {
-                                const metric = metrics.find(m => m.key === metricKey);
-                                return {
-                                    value: metricKey,
-                                    type: 'line',
-                                    color: metric.color
-                                };
-                            })
-                        }
-                        formatter={(value) => {
-                            const metric = metrics.find(m => m.key === value);
-                            return metric?.label || value;
-                        }}
-                        iconType="line"
-                    />
+                    
+                    <Legend />
 
-                    {forecastPeriod !== 'none' && forecastData.length > 0 && lastHistoryPoint && (
+                    {/* Вертикальна лінія "Зараз" */}
+                    {currentTime && (
                         <ReferenceLine
-                            x={lastHistoryPoint.timestamp}
+                            x={chartData.find(d => d.timestamp === currentTime)?.time}
                             stroke="#ef4444"
                             strokeWidth={2}
-                            strokeDasharray="5 5"
-                            label={{
-                                value: '⏰ Зараз',
-                                position: 'top',
-                                fill: '#ef4444',
-                                fontWeight: 'bold',
-                                fontSize: 14
+                            label={({ viewBox }) => {
+                                const { x, y } = viewBox;
+                                return (
+                                    <g>
+                                        {/* Білий фон */}
+                                        <rect
+                                            x={x - 30}
+                                            y={y + 10}
+                                            width={60}
+                                            height={20}
+                                            fill="white"
+                                            stroke="#ef4444"
+                                            strokeWidth={1}
+                                            rx={4}
+                                        />
+                                        {/* Текст */}
+                                        <text
+                                            x={x}
+                                            y={y + 24}
+                                            fill="#ef4444"
+                                            fontSize={12}
+                                            fontWeight="bold"
+                                            textAnchor="middle"
+                                        >
+                                            ▶ ЗАРАЗ
+                                        </text>
+                                    </g>
+                                );
                             }}
                         />
                     )}
 
+                    {/* Лінії метрик */}
                     {selectedMetrics.map(metricKey => {
                         const metric = metrics.find(m => m.key === metricKey);
                         return (
-                            <React.Fragment key={metricKey}>
-                                <Line
-                                    type="monotone"
-                                    dataKey={metricKey}
-                                    stroke={metric.color}
-                                    strokeWidth={2.5}
-                                    dot={false}
-                                    activeDot={{ r: 6 }}
-                                    connectNulls={false}
-                                />
-
-                                {forecastPeriod !== 'none' && forecastData.length > 0 && (
-                                    <Line
-                                        type="monotone"
-                                        dataKey={`${metricKey}_forecast`}
-                                        stroke={metric.color}
-                                        strokeWidth={2.5}
-                                        strokeDasharray="5 5"
-                                        dot={false}
-                                        activeDot={{ r: 5 }}
-                                        connectNulls={false}
-                                    />
-                                )}
-                            </React.Fragment>
+                            <Line
+                                key={metricKey}
+                                type="monotone"
+                                dataKey={metricKey}
+                                stroke={metric.color}
+                                strokeWidth={2.5}
+                                dot={false}
+                                activeDot={{ r: 6 }}
+                                connectNulls={true}
+                                strokeDasharray={(d) => {
+                                    // Якщо точка є прогнозом - пунктир
+                                    return d?.isForecast ? "5 5" : "0";
+                                }}
+                            />
                         );
                     })}
                 </LineChart>
             </ResponsiveContainer>
 
-            {forecastPeriod !== 'none' && forecastData.length > 0 && (
+            {/* Підказка */}
+            {forecastPeriod !== 'none' && (
                 <div className="forecast-info">
                     <p>
-                        💡 <strong>Прогноз:</strong> пунктирні лінії праворуч від червоної межі "Зараз".
-                        Впевненість прогнозу: 85-70% залежно від горизонту.
+                        💡 <strong>Підказка:</strong> Суцільна лінія - історичні дані, пунктирна лінія - прогноз ML моделі.
+                        Червона лінія "ЗАРАЗ" показує поточний момент часу.
                     </p>
                 </div>
             )}

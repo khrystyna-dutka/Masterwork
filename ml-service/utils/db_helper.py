@@ -1,12 +1,11 @@
+# ml-service/utils/db_helper.py
 import psycopg2
-from psycopg2.extras import RealDictCursor
-from config import Config
 import pandas as pd
 from datetime import datetime, timedelta
-import pandas as pd
+from config import Config
 
 class DatabaseHelper:
-    """Клас для роботи з PostgreSQL базою даних"""
+    """Робота з PostgreSQL"""
     
     def __init__(self):
         self.connection_params = {
@@ -18,16 +17,37 @@ class DatabaseHelper:
         }
     
     def get_connection(self):
-        """Створити з'єднання з базою даних"""
+        """Створити з'єднання"""
         try:
-            conn = psycopg2.connect(**self.connection_params)
-            return conn
+            return psycopg2.connect(**self.connection_params)
         except Exception as e:
             print(f"❌ Помилка підключення до БД: {e}")
             raise
     
+    def query(self, sql, params=None):
+        """Виконати запит і повернути результат"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            if params:
+                cursor.execute(sql, params)
+            else:
+                cursor.execute(sql)
+            
+            result = cursor.fetchall()
+            
+            cursor.close()
+            conn.close()
+            
+            return result
+            
+        except Exception as e:
+            print(f"❌ Помилка виконання запиту: {e}")
+            return []
+    
     def test_connection(self):
-        """Перевірити з'єднання з базою даних"""
+        """Перевірити підключення"""
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
@@ -35,89 +55,57 @@ class DatabaseHelper:
             version = cursor.fetchone()
             cursor.close()
             conn.close()
-            print(f"✅ Підключення до PostgreSQL успішне!")
-            print(f"📊 Версія: {version[0]}")
+            print(f"✅ Підключення успішне! PostgreSQL: {version[0][:50]}...")
             return True
         except Exception as e:
             print(f"❌ Помилка: {e}")
             return False
     
-    def get_historical_data(self, district_id, days=30, only_real=True):
+    def get_training_data(self, district_id, days=30):
         """
-        Отримати історичні дані для району
-        
-        Args:
-            district_id: ID району
-            days: Кількість днів історії
-            only_real: Тільки реальні дані (не прогнози)
-        
-        Returns:
-            DataFrame з даними
+        Отримати дані для навчання (тільки реальні, без прогнозів)
         """
         try:
             conn = self.get_connection()
             
-            # SQL запит
             query = """
                 SELECT 
-                    id,
-                    district_id,
-                    aqi,
-                    aqi_status,
-                    pm25,
-                    pm10,
-                    no2,
-                    so2,
-                    co,
-                    o3,
-                    temperature,
-                    humidity,
-                    pressure,
-                    wind_speed,
-                    wind_direction,
                     measured_at,
-                    is_forecast
+                    pm25, pm10, no2, so2, co, o3,
+                    temperature, humidity, pressure, wind_speed
                 FROM air_quality_history
                 WHERE district_id = %s
+                    AND is_forecast = FALSE
                     AND measured_at >= NOW() - INTERVAL '%s days'
+                ORDER BY measured_at ASC
             """
             
-            if only_real:
-                query += " AND is_forecast = FALSE"
-            
-            query += " ORDER BY measured_at ASC"
-            
-            # Виконати запит
             df = pd.read_sql_query(query, conn, params=(district_id, days))
             conn.close()
             
-            print(f"✅ Отримано {len(df)} записів для району {district_id}")
+            print(f"✅ Завантажено {len(df)} записів для району {district_id}")
             return df
             
         except Exception as e:
-            print(f"❌ Помилка отримання даних: {e}")
+            print(f"❌ Помилка: {e}")
             return pd.DataFrame()
     
-    def get_latest_data(self, district_id, hours=24):
+    def get_latest_data(self, district_id, hours=48):
         """
-        Отримати останні дані для району
-        
-        Args:
-            district_id: ID району
-            hours: Кількість годин
-        
-        Returns:
-            DataFrame з даними
+        Отримати останні дані для прогнозу
         """
         try:
             conn = self.get_connection()
             
             query = """
-                SELECT *
+                SELECT 
+                    measured_at,
+                    pm25, pm10, no2, so2, co, o3,
+                    temperature, humidity, pressure, wind_speed
                 FROM air_quality_history
                 WHERE district_id = %s
-                    AND measured_at >= NOW() - INTERVAL '%s hours'
                     AND is_forecast = FALSE
+                    AND measured_at >= NOW() - INTERVAL '%s hours'
                 ORDER BY measured_at ASC
             """
             
@@ -130,87 +118,137 @@ class DatabaseHelper:
             print(f"❌ Помилка: {e}")
             return pd.DataFrame()
     
-    def save_forecast(self, district_id, forecasts_df):
+    def save_forecasts(self, district_id, forecasts_df):
         """
         Зберегти прогнози в БД
-        forecasts_df: DataFrame з колонками [measured_at, pm25, pm10, no2, so2, co, o3, ...]
+        forecasts_df має колонки: measured_at, pm25, pm10, no2, so2, co, o3, aqi, aqi_status
         """
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
             
-            # Видалити старі прогнози для цього району
+            # Видалити старі прогнози
             cursor.execute("""
                 DELETE FROM air_quality_history
-                WHERE district_id = %s AND is_forecast = true AND measured_at > NOW()
+                WHERE district_id = %s AND is_forecast = TRUE AND measured_at > NOW()
             """, (district_id,))
-            
-            print(f"🗑️ Видалено старі прогнози для району {district_id}")
             
             # Вставити нові прогнози
             for _, row in forecasts_df.iterrows():
                 cursor.execute("""
                     INSERT INTO air_quality_history (
-                        district_id, aqi, aqi_status, pm25, pm10, no2, so2, co, o3,
-                        temperature, humidity, pressure, wind_speed, wind_direction,
-                        measured_at, is_forecast, confidence_level, data_source
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        district_id, measured_at, is_forecast,
+                        pm25, pm10, no2, so2, co, o3,
+                        aqi, aqi_status, data_source
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     district_id,
+                    row['measured_at'],
+                    True,  # is_forecast
+                    float(row['pm25']),
+                    float(row['pm10']),
+                    float(row['no2']),
+                    float(row['so2']),
+                    float(row['co']),
+                    float(row['o3']),
                     int(row['aqi']),
                     row['aqi_status'],
-                    float(row['pm25']),
-                    float(row['pm10']) if pd.notna(row.get('pm10')) else None,
-                    float(row['no2']) if pd.notna(row.get('no2')) else None,
-                    float(row['so2']) if pd.notna(row.get('so2')) else None,
-                    float(row['co']) if pd.notna(row.get('co')) else None,
-                    float(row['o3']) if pd.notna(row.get('o3')) else None,
-                    float(row['temperature']) if pd.notna(row.get('temperature')) else None,
-                    int(row['humidity']) if pd.notna(row.get('humidity')) else None,
-                    int(row['pressure']) if pd.notna(row.get('pressure')) else None,
-                    float(row['wind_speed']) if pd.notna(row.get('wind_speed')) else None,
-                    row.get('wind_direction') if pd.notna(row.get('wind_direction')) else None,
-                    row['measured_at'],
-                    True,  # ← is_forecast = True для прогнозів!
-                    float(row.get('confidence_level', 0.85)),
                     'ml_model'
                 ))
             
             conn.commit()
-            print(f"✅ Збережено {len(forecasts_df)} прогнозів для району {district_id}")
-            
             cursor.close()
             conn.close()
             
+            print(f"✅ Збережено {len(forecasts_df)} прогнозів для району {district_id}")
             return True
             
         except Exception as e:
-            print(f"❌ Помилка збереження прогнозів: {str(e)}")
+            print(f"❌ Помилка збереження: {e}")
             return False
     
     def get_data_stats(self, district_id):
-        """Отримати статистику по даних району"""
+        """Статистика по даних"""
         try:
             conn = self.get_connection()
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor = conn.cursor()
             
             cursor.execute("""
                 SELECT 
-                    COUNT(*) as total_records,
-                    MIN(measured_at) as earliest_date,
-                    MAX(measured_at) as latest_date,
+                    COUNT(*) as total,
+                    MIN(measured_at) as first_date,
+                    MAX(measured_at) as last_date,
                     AVG(pm25) as avg_pm25,
                     AVG(aqi) as avg_aqi
                 FROM air_quality_history
                 WHERE district_id = %s AND is_forecast = FALSE
             """, (district_id,))
             
-            stats = cursor.fetchone()
+            row = cursor.fetchone()
             cursor.close()
             conn.close()
             
-            return dict(stats) if stats else {}
+            return {
+                'total_records': row[0],
+                'first_date': row[1],
+                'last_date': row[2],
+                'avg_pm25': float(row[3]) if row[3] else 0,
+                'avg_aqi': float(row[4]) if row[4] else 0
+            }
             
         except Exception as e:
             print(f"❌ Помилка: {e}")
-            return {}
+            return None
+    
+    def get_forecasts_for_validation(self, district_id, hours_back=24):
+        """
+        Отримати прогнози для валідації
+        """
+        try:
+            conn = self.get_connection()
+            cutoff_time = datetime.now() - timedelta(hours=hours_back)
+            
+            query = """
+                SELECT measured_at, pm25, pm10, no2, so2, co, o3, aqi
+                FROM air_quality_history
+                WHERE district_id = %s
+                  AND is_forecast = true
+                  AND measured_at >= %s
+                  AND measured_at <= NOW()
+                ORDER BY measured_at ASC
+            """
+            
+            df = pd.read_sql_query(query, conn, params=(district_id, cutoff_time))
+            conn.close()
+            
+            return df
+            
+        except Exception as e:
+            print(f"❌ Помилка: {e}")
+            return pd.DataFrame()
+    
+    def get_actual_data_for_period(self, district_id, start_time, end_time):
+        """
+        Отримати реальні дані за період
+        """
+        try:
+            conn = self.get_connection()
+            
+            query = """
+                SELECT measured_at, pm25, pm10, no2, so2, co, o3, aqi
+                FROM air_quality_history
+                WHERE district_id = %s
+                  AND is_forecast = false
+                  AND measured_at >= %s
+                  AND measured_at <= %s
+                ORDER BY measured_at ASC
+            """
+            
+            df = pd.read_sql_query(query, conn, params=(district_id, start_time, end_time))
+            conn.close()
+            
+            return df
+            
+        except Exception as e:
+            print(f"❌ Помилка: {e}")
+            return pd.DataFrame()
