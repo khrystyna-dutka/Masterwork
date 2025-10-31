@@ -76,6 +76,14 @@ try {
   console.error('❌ Помилка підключення subscriptions routes:', error.message);
 }
 
+try {
+  const mlTestRoutes = require('./routes/mlTestRoutes');
+  app.use('/api/ml-test', mlTestRoutes);
+  console.log('✅ ML Test routes підключено');
+} catch (error) {
+  console.error('❌ Помилка підключення ml-test routes:', error.message);
+}
+
 // ========================================
 // ТЕСТОВІ ENDPOINTS (тільки для development)
 // ========================================

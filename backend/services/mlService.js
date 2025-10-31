@@ -1,3 +1,4 @@
+// backend/services/mlService.js
 const axios = require('axios');
 
 class MLService {
@@ -106,6 +107,46 @@ class MLService {
     } catch (error) {
       console.error('❌ ML Service недоступний:', error.message);
       return { status: 'unhealthy', error: error.message };
+    }
+  }
+
+  /**
+   * Протестувати ML модель
+   */
+  async testModel(districtId, days = 30, testSize = 20) {
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/test-model`,
+        {
+          district_id: districtId,
+          days: days,
+          test_size: testSize
+        },
+        {
+          timeout: 120000 // 2 хвилини
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('ML Service testModel error:', error.message);
+      throw new Error('Failed to test ML model: ' + error.message);
+    }
+  }
+
+  /**
+   * Отримати інформацію про доступні дані
+   */
+  async getTestDataInfo(districtId) {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}/test-data-info/${districtId}`,
+        { timeout: this.timeout }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('ML Service getTestDataInfo error:', error.message);
+      throw new Error('Failed to get test data info: ' + error.message);
     }
   }
 }

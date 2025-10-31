@@ -140,13 +140,15 @@ class DataPreprocessor:
         # 6. Взаємодії
         df = self.add_interaction_features(df)
         
-        # 7. Видалити рядки з NaN
-        df = df.dropna()
+        # 7. Заповнити NaN замість видалення
+        df = df.ffill()  # Forward fill
+        df = df.bfill()  # Backward fill
+        df = df.dropna(how='all')  # Видалити тільки повністю порожні рядки
         
         print(f"✅ Після обробки: {df.shape}")
         
         return df
-    
+
     def get_feature_columns(self):
         """Список всіх feature колонок"""
         features = []

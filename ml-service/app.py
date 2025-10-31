@@ -365,6 +365,203 @@ def monitor_all_districts():
         'results': results
     })
 
+
+# Додайте ЦЕЙ КОД в ml-service/app.py ПЕРЕД рядком "# ==================== MAIN ===================="
+
+@app.route('/test-model', methods=['POST'])
+def test_model():
+    """
+    Тестування ML моделі на історичних даних
+    """
+    try:
+        data = request.json
+        district_id = data.get('district_id')
+        days = data.get('days', 30)
+        test_size = data.get('test_size', 20) / 100  # конвертуємо відсотки в decimal
+        
+        print(f"\n{'='*70}")
+        print(f"🧪 ТЕСТУВАННЯ МОДЕЛІ - Район {district_id}")
+        print(f"{'='*70}")
+        
+        # 1. Завантажити дані
+        print(f"\n1️⃣ Завантаження даних за {days} днів...")
+        query = """
+            SELECT 
+                aqi, pm25, pm10, no2, so2, co, o3,
+                temperature, humidity, pressure, 
+                wind_speed, wind_direction,
+                measured_at
+            FROM air_quality_history
+            WHERE district_id = %s
+                AND is_forecast = false
+                AND measured_at >= NOW() - INTERVAL '%s days'
+            ORDER BY measured_at
+        """
+        
+        conn = db.get_connection()
+        df = pd.read_sql_query(query, conn, params=(district_id, days))
+        conn.close()
+        
+        if len(df) < 100:
+            return jsonify({
+                'success': False,
+                'error': f'Недостатньо даних: {len(df)} записів (потрібно мінімум 100)'
+            }), 400
+        
+        print(f"✅ Завантажено {len(df)} записів")
+        
+        # 2. Підготовка features
+        print("\n2️⃣ Підготовка features...")
+        from data.preprocessor import DataPreprocessor
+        preprocessor = DataPreprocessor(district_id)
+        
+        X, y, df_processed = preprocessor.prepare_training_data(df)
+        print(f"✅ {len(X)} зразків з {X.shape[1]} features")
+        
+        # 3. Train/Test split
+        print(f"\n3️⃣ Розділення Train/Test ({int((1-test_size)*100)}/{int(test_size*100)})...")
+        split_idx = int(len(X) * (1 - test_size))
+        
+        X_train = X[:split_idx]
+        X_test = X[split_idx:]
+        y_train = y[:split_idx]
+        y_test = y[split_idx:]
+        df_test = df_processed.iloc[split_idx:].copy()
+        
+        print(f"   Train: {len(X_train)} зразків")
+        print(f"   Test: {len(X_test)} зразків")
+        
+        # 4. Навчання моделі
+        print("\n4️⃣ Навчання моделі...")
+        from models.air_quality_model import AirQualityModel
+        model = AirQualityModel(district_id, model_type='xgboost')
+        
+        train_score, val_score = model.train(X_train, y_train, X_test, y_test)
+        print(f"✅ Train R²: {train_score:.4f}, Test R²: {val_score:.4f}")
+        
+        # 5. Прогноз на тестовій вибірці
+        print("\n5️⃣ Прогнозування на тестовій вибірці...")
+        predictions = model.predict(X_test)
+        
+        # 6. Розрахунок метрик для кожного параметра
+        print("\n6️⃣ Розрахунок метрик...")
+        parameters = ['pm25', 'pm10', 'no2', 'so2', 'co', 'o3']
+        metrics = {}
+        comparison_data = []
+        
+        for i, param in enumerate(parameters):
+            y_true = y_test[:, i]
+            y_pred = predictions[:, i]
+            
+            # MAE, RMSE, R²
+            mae = float(np.mean(np.abs(y_true - y_pred)))
+            rmse = float(np.sqrt(np.mean((y_true - y_pred) ** 2)))
+            
+            ss_res = np.sum((y_true - y_pred) ** 2)
+            ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+            r2 = float(1 - (ss_res / ss_tot)) if ss_tot > 0 else 0
+            
+            # MAPE
+            mask = y_true != 0
+            mape = float(np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100) if mask.any() else 0
+            
+            # Accuracy (в межах ±10%)
+            threshold = np.maximum(y_true * 0.1, 5)
+            accurate = np.abs(y_true - y_pred) <= threshold
+            accuracy = float(np.mean(accurate) * 100)
+            
+            metrics[param] = {
+                'mae': round(mae, 2),
+                'rmse': round(rmse, 2),
+                'r2': round(r2, 4),
+                'mape': round(mape, 2),
+                'accuracy': round(accuracy, 2),
+                'avgActual': round(float(np.mean(y_true)), 2),
+                'avgPredicted': round(float(np.mean(y_pred)), 2),
+                'samples': len(y_true)
+            }
+            
+            print(f"   {param.upper()}: MAE={mae:.2f}, RMSE={rmse:.2f}, R²={r2:.4f}, Accuracy={accuracy:.1f}%")
+        
+        # 7. Дані для графіка
+        for idx in range(len(df_test)):
+            row = df_test.iloc[idx]
+            comparison_data.append({
+                'timestamp': row['measured_at'].isoformat(),
+                'actual': {param: float(y_test[idx, i]) for i, param in enumerate(parameters)},
+                'predicted': {param: float(predictions[idx, i]) for i, param in enumerate(parameters)}
+            })
+        
+        print(f"\n{'='*70}")
+        print("✅ ТЕСТУВАННЯ ЗАВЕРШЕНО")
+        print(f"{'='*70}\n")
+        
+        return jsonify({
+            'success': True,
+            'district_id': district_id,
+            'metrics': metrics,
+            'comparison_data': comparison_data,
+            'data_info': {
+                'total_samples': len(df),
+                'train_samples': len(X_train),
+                'test_samples': len(X_test),
+                'features_count': X.shape[1],
+                'date_range': {
+                    'start': df['measured_at'].min().isoformat(),
+                    'end': df['measured_at'].max().isoformat()
+                }
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Помилка тестування: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/test-data-info/<int:district_id>', methods=['GET'])
+def get_test_data_info(district_id):
+    """
+    Інформація про доступні дані для тестування
+    """
+    try:
+        query = """
+            SELECT 
+                COUNT(*) as total_records,
+                MIN(measured_at) as first_date,
+                MAX(measured_at) as last_date,
+                COUNT(DISTINCT DATE(measured_at)) as days_with_data
+            FROM air_quality_history
+            WHERE district_id = %s
+                AND is_forecast = false
+        """
+        
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(query, (district_id,))
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'district_id': district_id,
+            'total_records': result[0],
+            'first_date': result[1].isoformat() if result[1] else None,
+            'last_date': result[2].isoformat() if result[2] else None,
+            'days_with_data': result[3]
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 # ==================== MAIN ====================
 
 if __name__ == '__main__':

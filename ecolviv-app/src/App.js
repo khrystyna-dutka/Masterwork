@@ -9,6 +9,7 @@ import ProfilePage from './pages/ProfilePage';
 import Register from './components/Auth/Register';
 import Login from './components/Auth/Login';
 import { useAirQuality } from './hooks/useAirQuality';  // <-- ДОДАЙ ЦЕЙ ІМПОРТ
+import MLTestPage from './pages/MLTestPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -85,6 +86,10 @@ function App() {
                 setCurrentPage={setCurrentPage}
                 districts={districts}
               />
+            )}
+
+            {currentPage === 'ml-test' && (
+              <MLTestPage />
             )}
           </>
         )}

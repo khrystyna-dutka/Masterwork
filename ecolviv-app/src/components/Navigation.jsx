@@ -1,7 +1,7 @@
 // src/components/Navigation.jsx
 
 import React, { useState } from 'react';
-import { Wind, Home, Navigation as NavIcon, BarChart3, User, LogIn, Menu, X, LogOut } from 'lucide-react';
+import { Wind, Home, Navigation as NavIcon, BarChart3, User, LogIn, Menu, X, LogOut, Target } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Navigation = ({ currentPage, setCurrentPage }) => {
@@ -11,7 +11,8 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
   const navItems = [
     { id: 'home', label: 'Головна', icon: Home },
     { id: 'map', label: 'Карта', icon: NavIcon },
-    { id: 'monitoring', label: 'Моніторинг', icon: BarChart3 }
+    { id: 'monitoring', label: 'Моніторинг', icon: BarChart3 },
+    { id: 'ml-test', label: 'Тест ML', icon: Target }
   ];
 
   const handleLogout = () => {
