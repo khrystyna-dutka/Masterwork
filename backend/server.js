@@ -84,6 +84,14 @@ try {
   console.error('❌ Помилка підключення ml-test routes:', error.message);
 }
 
+try {
+  const scenarioTestRoutes = require('./routes/scenarioTestRoutes');
+  app.use('/api/scenario-test', scenarioTestRoutes);
+  console.log('✅ Scenario Test routes підключено');
+} catch (error) {
+  console.error('❌ Помилка підключення scenario-test routes:', error.message);
+}
+
 // ========================================
 // ТЕСТОВІ ENDPOINTS (тільки для development)
 // ========================================

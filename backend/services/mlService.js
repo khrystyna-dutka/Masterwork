@@ -149,6 +149,30 @@ class MLService {
       throw new Error('Failed to get test data info: ' + error.message);
     }
   }
+
+    /**
+   * Протестувати модель на сценарії
+   */
+  async testScenario(districtId, scenario, customValues) {
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/test-scenario`,
+        {
+          district_id: districtId,
+          scenario: scenario,
+          custom_values: customValues
+        },
+        {
+          timeout: 60000 // 1 хвилина
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('ML Service testScenario error:', error.message);
+      throw new Error('Failed to test scenario: ' + error.message);
+    }
+  }
 }
 
 module.exports = new MLService();

@@ -1,15 +1,15 @@
 # ml-service/models/air_quality_model.py
 import numpy as np
-import joblib
-import os
+import xgboost as xgb
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.multioutput import MultiOutputRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import xgboost as xgb
+import joblib
+import os
 from config import Config
+import json
 
 class AirQualityModel:
-    """Покращена ML модель для прогнозування"""
+    """ML модель для прогнозування якості повітря"""
     
     def __init__(self, district_id, model_type='xgboost'):
         self.district_id = district_id
@@ -17,99 +17,130 @@ class AirQualityModel:
         self.model = None
         self.model_path = os.path.join(
             Config.MODEL_PATH,
-            f'model_district_{district_id}_{model_type}.pkl'
+            f'{model_type}_district_{district_id}.pkl'
+        )
+        self.metrics_path = os.path.join(
+            Config.MODEL_PATH,
+            f'metrics_district_{district_id}.json'
         )
     
-    def build_model(self):
-        """Створити ПОКРАЩЕНУ модель"""
+    def create_model(self):
+        """Створити модель з ANTI-OVERFITTING параметрами"""
         if self.model_type == 'xgboost':
-            # ⬇️ ПОКРАЩЕНО: більше дерев, більша глибина
+            # ✅ ВИПРАВЛЕНО: Параметри проти overfitting
             base_model = xgb.XGBRegressor(
-                n_estimators=100,      # ⬅️ ЗБІЛЬШИЛИ з 10 до 100
-                max_depth=6,           # ⬅️ ЗБІЛЬШИЛИ з 3 до 6
-                learning_rate=0.05,    # ⬅️ ЗМЕНШИЛИ для кращого навчання
-                subsample=0.8,
-                colsample_bytree=0.8,
-                min_child_weight=3,
-                gamma=0.1,
+                # Менше дерев
+                n_estimators=50,          # Було: 200
+                
+                # Менша глибина
+                max_depth=4,              # Було: 8
+                
+                # Вищий learning rate
+                learning_rate=0.1,        # Було: 0.05
+                
+                # Мінімум зразків на листі
+                min_child_weight=5,       # Додано!
+                
+                # Менше features на кожному split
+                subsample=0.7,            # Було: 0.8
+                colsample_bytree=0.7,     # Було: 0.8
+                colsample_bylevel=0.7,    # Додано!
+                
+                # L1 і L2 регуляризація
+                reg_alpha=1.0,            # Додано! (L1)
+                reg_lambda=1.0,           # Додано! (L2)
+                
+                # Gamma (мінімальний виграш для split)
+                gamma=0.5,                # Додано!
+                
+                random_state=42,
+                n_jobs=-1
+                
+                # ❌ ПРИБРАЛИ early_stopping_rounds - він для fit(), а не для конструктора!
+            )
+        elif self.model_type == 'random_forest':
+            base_model = RandomForestRegressor(
+                n_estimators=50,
+                max_depth=10,
+                min_samples_split=10,
+                min_samples_leaf=5,
+                max_features='sqrt',
                 random_state=42,
                 n_jobs=-1
             )
         else:
-            # Random Forest
-            base_model = RandomForestRegressor(
-                n_estimators=100,      # ⬅️ ЗБІЛЬШИЛИ
-                max_depth=10,          # ⬅️ ЗБІЛЬШИЛИ
-                min_samples_split=5,
-                min_samples_leaf=2,
-                random_state=42,
-                n_jobs=-1
-            )
+            raise ValueError(f"Unknown model type: {self.model_type}")
         
+        # MultiOutput для прогнозування всіх параметрів одночасно
         self.model = MultiOutputRegressor(base_model)
         
-        print(f"✅ Модель створено: {self.model_type} (покращена)")
-    
-    def train(self, X_train, y_train, X_val, y_val):
+        return self.model
+    def train(self, X_train, y_train, X_val=None, y_val=None):
         """Навчити модель"""
-        print(f"\n🎓 Навчання моделі для району {self.district_id}...")
-        print(f"   Train samples: {len(X_train)}")
+        print(f"\n🎯 Навчання {self.model_type} моделі (з anti-overfitting)...")
         
         # Створити модель
-        self.build_model()
+        self.create_model()
         
-        # Навчити
+        # ✅ ВИПРАВЛЕНО: Просте навчання без early stopping
+        # (early stopping складно реалізувати з MultiOutputRegressor)
         self.model.fit(X_train, y_train)
         
-        # Оцінити
+        # Оцінити якість
         train_score = self.model.score(X_train, y_train)
-        val_score = self.model.score(X_val, y_val)
         
-        print(f"   📊 Train R² score: {train_score:.4f}")
-        print(f"   📊 Validation R² score: {val_score:.4f}")
+        val_score = None
+        if X_val is not None and y_val is not None:
+            val_score = self.model.score(X_val, y_val)
         
-        # Зберегти
+        print(f"✅ Train R²: {train_score:.4f}")
+        if val_score is not None:
+            print(f"✅ Val R²: {val_score:.4f}")
+            diff = abs(train_score - val_score)
+            print(f"   Різниця: {diff:.4f}")
+            
+            if diff < 0.15:
+                print(f"   ✅ Добре! Немає overfitting!")
+            elif diff < 0.25:
+                print(f"   ⚠️ Невелика різниця")
+            else:
+                print(f"   ❌ Можливий overfitting")
+        
+        # Зберегти модель
         self.save_model()
+        
+        # Зберегти метрики
+        metrics = {
+            'train_r2': float(train_score),
+            'val_r2': float(val_score) if val_score else None,
+            'model_type': self.model_type
+        }
+        
+        os.makedirs(Config.MODEL_PATH, exist_ok=True)
+        with open(self.metrics_path, 'w') as f:
+            json.dump(metrics, f, indent=2)
         
         return train_score, val_score
     
     def predict(self, X):
-        """Зробити прогноз"""
+        """Прогноз"""
         if self.model is None:
-            raise ValueError("Модель не навчена! Спочатку завантажте модель.")
+            raise ValueError("Model not trained or loaded")
         
         return self.model.predict(X)
-    
-    def evaluate(self, X, y):
-        """Оцінити модель"""
-        y_pred = self.predict(X)
-        
-        metrics = {}
-        param_names = Config.TARGET_FEATURES
-        
-        for i, param in enumerate(param_names):
-            mae = mean_absolute_error(y[:, i], y_pred[:, i])
-            rmse = np.sqrt(mean_squared_error(y[:, i], y_pred[:, i]))
-            r2 = r2_score(y[:, i], y_pred[:, i])
-            
-            metrics[param] = {
-                'mae': mae,
-                'rmse': rmse,
-                'r2': r2
-            }
-        
-        return metrics
     
     def save_model(self):
         """Зберегти модель"""
         os.makedirs(Config.MODEL_PATH, exist_ok=True)
         joblib.dump(self.model, self.model_path)
-        print(f"   💾 Модель збережено: {self.model_path}")
+        print(f"✅ Модель збережена: {self.model_path}")
     
     def load_model(self):
         """Завантажити модель"""
         if os.path.exists(self.model_path):
             self.model = joblib.load(self.model_path)
-            print(f"✅ Модель завантажено: {self.model_path}")
+            print(f"✅ Модель завантажена: {self.model_path}")
             return True
-        return False
+        else:
+            print(f"⚠️ Модель не знайдена: {self.model_path}")
+            return False

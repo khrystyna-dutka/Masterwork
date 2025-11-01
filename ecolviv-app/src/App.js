@@ -10,6 +10,7 @@ import Register from './components/Auth/Register';
 import Login from './components/Auth/Login';
 import { useAirQuality } from './hooks/useAirQuality';  // <-- ДОДАЙ ЦЕЙ ІМПОРТ
 import MLTestPage from './pages/MLTestPage';
+import ScenarioTestPage from './pages/ScenarioTestPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -90,6 +91,10 @@ function App() {
 
             {currentPage === 'ml-test' && (
               <MLTestPage />
+            )}
+
+            {currentPage === 'scenario-test' && (
+              <ScenarioTestPage />
             )}
           </>
         )}
