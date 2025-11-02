@@ -3,6 +3,7 @@ import React from 'react';
 import AirQualityDetails from '../components/AirQualityDetails/AirQualityDetails';
 import AirQualityChart from '../components/AirQualityChart/AirQualityChart';
 import './MonitoringPage.css';
+import AQITimeline from '../components/AQITimeline';
 
 const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict }) => {
   const getAQIColor = (aqi) => {
@@ -78,6 +79,16 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict }) =>
             })}
           </div>
         </div>
+
+        {/* Timeline тижневого прогнозу */}
+        {selectedDistrict && (
+          <div className="mb-8">
+            <AQITimeline 
+              districtId={selectedDistrict.id}
+              currentAQI={selectedDistrict.baseAQI}
+            />
+          </div>
+        )}
 
         {/* Детальна інформація про вибраний район */}
         {selectedDistrict && (
