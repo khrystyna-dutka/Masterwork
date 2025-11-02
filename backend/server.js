@@ -92,6 +92,14 @@ try {
   console.error('❌ Помилка підключення scenario-test routes:', error.message);
 }
 
+try {
+  const scenarioModelingRoutes = require('./routes/scenarioModelingRoutes');
+  app.use('/api/scenario-modeling', scenarioModelingRoutes);
+  console.log('✅ Scenario Modeling routes підключено');
+} catch (error) {
+  console.error('❌ Помилка підключення scenario-modeling routes:', error.message);
+}
+
 // ========================================
 // ТЕСТОВІ ENDPOINTS (тільки для development)
 // ========================================

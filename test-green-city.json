@@ -1,0 +1,10 @@
+{
+  "district_id": 1,
+  "scenario_name": "Зелене місто",
+  "changes": {
+    "trees_change": 25,
+    "traffic_change": 0,
+    "industry_change": 0,
+    "population_change": 0
+  }
+}
