@@ -85,7 +85,7 @@ class ModelMonitor:
             
             # 5. Визначити чи потрібно перенавчання
             should_retrain = avg_mae > self.RETRAIN_THRESHOLD_MAE
-            is_critical = avg_mae > self.CRITICAL_MAE  # ⬅️ ДОДАЛИ
+            is_critical = avg_mae > self.CRITICAL_MAE
             
             if is_critical:
                 print(f"   🚨 КРИТИЧНА АНОМАЛІЯ! MAE ({avg_mae:.3f}) > {self.CRITICAL_MAE}")
@@ -99,7 +99,7 @@ class ModelMonitor:
             return {
                 'mae': round(avg_mae, 3),
                 'should_retrain': should_retrain,
-                'is_critical': is_critical,  # ⬅️ ДОДАЛИ
+                'is_critical': is_critical,
                 'metrics': metrics,
                 'samples_compared': len(merged),
                 'reason': 'critical_anomaly' if is_critical else ('high_error' if should_retrain else 'good_performance')

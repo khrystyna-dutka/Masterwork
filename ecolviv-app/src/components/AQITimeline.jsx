@@ -145,7 +145,7 @@ const AQITimeline = ({ districtId, currentAQI }) => {
     });
     
     // 3 майбутні дні (прогноз з тенденцією)
-    let trendDirection = Math.random() > 0.5 ? 1 : -1; // Покращення або погіршення
+    let trendDirection = Math.random() > 0.5 ? 1 : -1;
     for (let i = 1; i <= 3; i++) {
       const variation = trendDirection * (i * 3) + (Math.random() * 8 - 4);
       const aqi = Math.round(Math.max(15, Math.min(120, baseAQI + variation)));

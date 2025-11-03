@@ -26,7 +26,7 @@ class AuthService {
   async login(email, password) {
     try {
       const response = await api.post('/auth/login', { email, password });
-      const data = response.data; // <-- ДОДАЙ ЦЕ
+      const data = response.data;
       
       if (data.success && data.data.token) {
         this.setToken(data.data.token);

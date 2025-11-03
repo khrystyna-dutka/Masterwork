@@ -25,7 +25,7 @@ const ChangePassword = ({ onClose, onSuccess }) => {
       ...prev,
       [name]: value
     }));
-    // Очищаємо помилку для поля
+    
     if (validationErrors[name]) {
       setValidationErrors(prev => ({
         ...prev,

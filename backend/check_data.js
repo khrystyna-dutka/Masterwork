@@ -1,5 +1,5 @@
 // check_data.js
-require('dotenv').config(); // ⬅️ ДОДАЛИ!
+require('dotenv').config();
 const { pool } = require('./config/database');
 
 pool.query(`

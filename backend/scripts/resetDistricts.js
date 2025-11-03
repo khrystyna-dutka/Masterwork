@@ -23,8 +23,8 @@ async function resetDistricts() {
       {
         name: 'Галицький',
         name_en: 'Halytskyi',
-        latitude: 49.8403,    // ← ВИПРАВЛЕНО
-        longitude: 24.0323,   // ← ВИПРАВЛЕНО
+        latitude: 49.8403,
+        longitude: 24.0323,
         population: 115000,
         tree_coverage: 40,
         traffic_level: 82,
@@ -91,8 +91,8 @@ async function resetDistricts() {
         [
           district.name,
           district.name_en,
-          district.latitude,   // ← ВИПРАВЛЕНО
-          district.longitude,  // ← ВИПРАВЛЕНО
+          district.latitude,
+          district.longitude,
           district.population,
           district.tree_coverage,
           district.traffic_level,

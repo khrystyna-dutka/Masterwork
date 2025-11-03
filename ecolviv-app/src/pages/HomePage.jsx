@@ -17,7 +17,7 @@ const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }
           <p className="text-xl text-gray-600 mb-8">
             Інтелектуальна система моніторингу та прогнозування якості повітря у Львові
           </p>
-          
+
           <div className="flex flex-wrap justify-center gap-4">
             <button
               onClick={() => setCurrentPage('map')}

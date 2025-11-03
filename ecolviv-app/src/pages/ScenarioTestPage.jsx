@@ -1,11 +1,11 @@
 // src/pages/ScenarioTestPage.jsx
 
 import React, { useState, useEffect } from 'react';
-import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Area, AreaChart, ReferenceLine
 } from 'recharts';
-import { 
+import {
   Flame, Factory, Cloud, Wind, CheckCircle, Play, AlertTriangle,
   TrendingUp, TrendingDown, Clock, Target, ArrowDown, ArrowUp
 } from 'lucide-react';
@@ -164,17 +164,14 @@ const ScenarioTestPage = () => {
                 <div
                   key={scenario.id}
                   onClick={() => setSelectedScenario(scenario)}
-                  className={`bg-white rounded-xl shadow-md p-6 cursor-pointer transition-all hover:shadow-lg ${
-                    isSelected ? 'ring-2 ring-orange-500 shadow-orange-200' : ''
-                  }`}
+                  className={`bg-white rounded-xl shadow-md p-6 cursor-pointer transition-all hover:shadow-lg ${isSelected ? 'ring-2 ring-orange-500 shadow-orange-200' : ''
+                    }`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-lg ${
-                      isSelected ? 'bg-orange-100' : 'bg-gray-100'
-                    }`}>
-                      <IconComponent className={`w-8 h-8 ${
-                        isSelected ? 'text-orange-600' : 'text-gray-600'
-                      }`} />
+                    <div className={`p-3 rounded-lg ${isSelected ? 'bg-orange-100' : 'bg-gray-100'
+                      }`}>
+                      <IconComponent className={`w-8 h-8 ${isSelected ? 'text-orange-600' : 'text-gray-600'
+                        }`} />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-gray-800 mb-1">
@@ -225,7 +222,7 @@ const ScenarioTestPage = () => {
                 <AlertTriangle className="w-6 h-6 text-orange-600" />
                 Початкові умови: {selectedScenario?.name}
               </h2>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {Object.entries(testResults.initial_values).slice(0, 8).map(([key, value]) => (
                   <div key={key} className="bg-gray-50 rounded-lg p-3">
@@ -246,80 +243,77 @@ const ScenarioTestPage = () => {
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {testResults.analysis.parameter_details && 
+                {testResults.analysis.parameter_details &&
                   Object.entries(testResults.analysis.parameter_details).map(([param, details]) => (
-                  <div key={param} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-bold text-gray-800">{parameterInfo[param].label}</h3>
-                        <p className="text-xs text-gray-500">{parameterInfo[param].unit}</p>
-                      </div>
-                      <div className={`px-2 py-1 rounded text-xs font-semibold ${
-                        getStatusColor(details.final_status)
-                      }`}>
-                        {getStatusLabel(details.final_status)}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 mb-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Початок:</span>
-                        <span className="font-bold text-gray-800">{details.initial_value}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Через 12 год:</span>
-                        <span className="font-bold text-gray-800">{details.final_value}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Зміна:</span>
-                        <span className={`font-bold flex items-center gap-1 ${
-                          details.percent_change < 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {details.percent_change < 0 ? (
-                            <ArrowDown className="w-4 h-4" />
-                          ) : (
-                            <ArrowUp className="w-4 h-4" />
-                          )}
-                          {Math.abs(details.percent_change)}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {details.will_be_safe && (
-                      <div className="bg-green-50 border border-green-200 rounded p-2">
-                        <div className="flex items-center gap-2 text-sm text-green-800">
-                          <Clock className="w-4 h-4" />
-                          <span>Безпечно через {details.time_to_safe} год</span>
+                    <div key={param} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-bold text-gray-800">{parameterInfo[param].label}</h3>
+                          <p className="text-xs text-gray-500">{parameterInfo[param].unit}</p>
+                        </div>
+                        <div className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(details.final_status)
+                          }`}>
+                          {getStatusLabel(details.final_status)}
                         </div>
                       </div>
-                    )}
 
-                    {!details.will_be_safe && details.will_be_moderate && (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
-                        <div className="flex items-center gap-2 text-sm text-yellow-800">
-                          <Clock className="w-4 h-4" />
-                          <span>Помірно через {details.time_to_moderate} год</span>
+                      <div className="space-y-2 mb-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Початок:</span>
+                          <span className="font-bold text-gray-800">{details.initial_value}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Через 12 год:</span>
+                          <span className="font-bold text-gray-800">{details.final_value}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Зміна:</span>
+                          <span className={`font-bold flex items-center gap-1 ${details.percent_change < 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                            {details.percent_change < 0 ? (
+                              <ArrowDown className="w-4 h-4" />
+                            ) : (
+                              <ArrowUp className="w-4 h-4" />
+                            )}
+                            {Math.abs(details.percent_change)}%
+                          </span>
                         </div>
                       </div>
-                    )}
 
-                    {!details.will_be_safe && !details.will_be_moderate && (
-                      <div className="bg-red-50 border border-red-200 rounded p-2">
-                        <p className="text-xs text-red-800">
-                          Не досягне безпечного рівня
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      {details.will_be_safe && (
+                        <div className="bg-green-50 border border-green-200 rounded p-2">
+                          <div className="flex items-center gap-2 text-sm text-green-800">
+                            <Clock className="w-4 h-4" />
+                            <span>Безпечно через {details.time_to_safe} год</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {!details.will_be_safe && details.will_be_moderate && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                          <div className="flex items-center gap-2 text-sm text-yellow-800">
+                            <Clock className="w-4 h-4" />
+                            <span>Помірно через {details.time_to_moderate} год</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {!details.will_be_safe && !details.will_be_moderate && (
+                        <div className="bg-red-50 border border-red-200 rounded p-2">
+                          <p className="text-xs text-red-800">
+                            Не досягне безпечного рівня
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
 
               {/* Загальний висновок */}
-              <div className={`mt-6 p-4 rounded-lg border-2 ${
-                testResults.analysis.all_parameters_safe 
+              <div className={`mt-6 p-4 rounded-lg border-2 ${testResults.analysis.all_parameters_safe
                   ? 'bg-green-50 border-green-300'
                   : 'bg-orange-50 border-orange-300'
-              }`}>
+                }`}>
                 {testResults.analysis.all_parameters_safe ? (
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />
@@ -328,7 +322,7 @@ const ScenarioTestPage = () => {
                         ✅ Повне відновлення за {testResults.analysis.slowest_recovery_time} годин
                       </p>
                       <p className="text-sm text-green-800">
-                        Всі параметри досягнуть безпечного рівня. 
+                        Всі параметри досягнуть безпечного рівня.
                         Найповільніше відновлюється: {parameterInfo[testResults.analysis.slowest_recovery]?.label}
                       </p>
                     </div>
@@ -341,7 +335,7 @@ const ScenarioTestPage = () => {
                         ⚠️ Часткове відновлення
                       </p>
                       <p className="text-sm text-orange-800">
-                        Не всі параметри досягнуть безпечного рівня за 12 годин. 
+                        Не всі параметри досягнуть безпечного рівня за 12 годин.
                         Рекомендується залишатися в приміщенні та використовувати захист.
                       </p>
                     </div>
@@ -378,40 +372,40 @@ const ScenarioTestPage = () => {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={currentParam.color} stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor={currentParam.color} stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor={currentParam.color} stopOpacity={0.8} />
+                      <stop offset="95%" stopColor={currentParam.color} stopOpacity={0.1} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="hour" />
                   <YAxis label={{ value: currentParam.unit, angle: -90, position: 'insideLeft' }} />
                   <Tooltip />
-                  
+
                   {/* Зони безпеки */}
-                  <ReferenceLine 
-                    y={currentParam.safe} 
-                    stroke="#10b981" 
+                  <ReferenceLine
+                    y={currentParam.safe}
+                    stroke="#10b981"
                     strokeDasharray="3 3"
                     label={{ value: 'Безпечно', position: 'right', fill: '#10b981', fontSize: 12 }}
                   />
-                  <ReferenceLine 
-                    y={currentParam.moderate} 
-                    stroke="#f59e0b" 
+                  <ReferenceLine
+                    y={currentParam.moderate}
+                    stroke="#f59e0b"
                     strokeDasharray="3 3"
                     label={{ value: 'Помірно', position: 'right', fill: '#f59e0b', fontSize: 12 }}
                   />
-                  <ReferenceLine 
-                    y={currentParam.critical} 
-                    stroke="#ef4444" 
+                  <ReferenceLine
+                    y={currentParam.critical}
+                    stroke="#ef4444"
                     strokeDasharray="3 3"
                     label={{ value: 'Критично', position: 'right', fill: '#ef4444', fontSize: 12 }}
                   />
-                  
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
+
+                  <Area
+                    type="monotone"
+                    dataKey="value"
                     stroke={currentParam.color}
-                    fillOpacity={1} 
+                    fillOpacity={1}
                     fill="url(#colorValue)"
                     strokeWidth={3}
                   />

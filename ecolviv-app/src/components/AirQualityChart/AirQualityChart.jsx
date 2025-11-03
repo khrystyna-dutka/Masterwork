@@ -36,7 +36,6 @@ const AirQualityChart = ({ districtId, districtName }) => {
         try {
             setLoading(true);
 
-            // ⬇️ ДОДАЙ ЦЕЙ ЛОГ
             console.log('🔄 Завантаження даних...');
             console.log('  Район:', districtId);
             console.log('  Період історії:', historyPeriod);
@@ -47,10 +46,9 @@ const AirQualityChart = ({ districtId, districtName }) => {
             // 1. Завантажити історичні дані
             const historyResponse = await airQualityAPI.getDistrictHistory(districtId, historyPeriod);
 
-            // ⬇️ ДОДАЙ ЦЕЙ ЛОГ
             console.log('📦 Отримана відповідь:', historyResponse.data);
             console.log('📊 Кількість записів:', historyResponse.data.data?.length);
-            
+
             const historyData = historyResponse.data.data || [];
 
             // 2. Завантажити прогнози (якщо увімкнено)
@@ -59,7 +57,7 @@ const AirQualityChart = ({ districtId, districtName }) => {
                 try {
                     const hours = forecastPeriod === '12h' ? 12 : forecastPeriod === '24h' ? 24 : 48;
                     const forecastResponse = await forecastAPI.getDistrictForecast(districtId, hours);
-                    
+
                     if (forecastResponse.data.success) {
                         forecastData = forecastResponse.data.data.forecasts || [];
                     }
@@ -111,8 +109,8 @@ const AirQualityChart = ({ districtId, districtName }) => {
                 .sort((a, b) => a.timestamp - b.timestamp);
 
             // 6. Визначити поточний час (останній запис історії)
-            const currentTimestamp = formattedHistory.length > 0 
-                ? formattedHistory[formattedHistory.length - 1].timestamp 
+            const currentTimestamp = formattedHistory.length > 0
+                ? formattedHistory[formattedHistory.length - 1].timestamp
                 : Date.now();
 
             setChartData(combined);
@@ -224,16 +222,16 @@ const AirQualityChart = ({ districtId, districtName }) => {
             <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    
+
                     <XAxis
                         dataKey="time"
                         stroke="#6b7280"
                         tick={{ fontSize: 12 }}
                         interval="preserveStartEnd"
                     />
-                    
+
                     <YAxis stroke="#6b7280" />
-                    
+
                     <Tooltip
                         contentStyle={{
                             backgroundColor: 'white',
@@ -242,7 +240,7 @@ const AirQualityChart = ({ districtId, districtName }) => {
                             padding: '12px'
                         }}
                     />
-                    
+
                     <Legend />
 
                     {/* Вертикальна лінія "Зараз" */}
@@ -297,7 +295,6 @@ const AirQualityChart = ({ districtId, districtName }) => {
                                 activeDot={{ r: 6 }}
                                 connectNulls={true}
                                 strokeDasharray={(d) => {
-                                    // Якщо точка є прогнозом - пунктир
                                     return d?.isForecast ? "5 5" : "0";
                                 }}
                             />
@@ -305,16 +302,6 @@ const AirQualityChart = ({ districtId, districtName }) => {
                     })}
                 </LineChart>
             </ResponsiveContainer>
-
-            {/* Підказка */}
-            {forecastPeriod !== 'none' && (
-                <div className="forecast-info">
-                    <p>
-                        💡 <strong>Підказка:</strong> Суцільна лінія - історичні дані, пунктирна лінія - прогноз ML моделі.
-                        Червона лінія "ЗАРАЗ" показує поточний момент часу.
-                    </p>
-                </div>
-            )}
         </div>
     );
 };

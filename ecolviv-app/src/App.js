@@ -8,7 +8,7 @@ import MonitoringPage from './pages/MonitoringPage';
 import ProfilePage from './pages/ProfilePage';
 import Register from './components/Auth/Register';
 import Login from './components/Auth/Login';
-import { useAirQuality } from './hooks/useAirQuality';  // <-- ДОДАЙ ЦЕЙ ІМПОРТ
+import { useAirQuality } from './hooks/useAirQuality';
 import MLTestPage from './pages/MLTestPage';
 import ScenarioTestPage from './pages/ScenarioTestPage';
 import ScenarioModelingPage from './pages/ScenarioModelingPage';
@@ -18,7 +18,7 @@ function App() {
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   
   // Використовуємо хук для отримання реальних даних
-  const { districts, loading, error, lastUpdate, refreshData } = useAirQuality();  // <-- ДОДАЙ ЦЕЙ РЯДОК
+  const { districts, loading, error, lastUpdate, refreshData } = useAirQuality();
 
   return (
     <AuthProvider>
@@ -66,14 +66,14 @@ function App() {
                 refreshData={refreshData}
               />
             )}
-            
-            {currentPage === 'monitoring' && (
-              <MonitoringPage 
-                districts={districts}
-                selectedDistrict={selectedDistrict}
-                setSelectedDistrict={setSelectedDistrict}
-              />
-            )}
+          {currentPage === 'monitoring' && (
+            <MonitoringPage 
+              districts={districts}
+              selectedDistrict={selectedDistrict}
+              setSelectedDistrict={setSelectedDistrict}
+              setCurrentPage={setCurrentPage}
+            />
+          )}
 
             {currentPage === 'scenario-modeling' && (
               <ScenarioModelingPage />

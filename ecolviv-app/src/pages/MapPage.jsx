@@ -132,7 +132,7 @@ const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }
           {/* Карта */}
           <div className="lg:col-span-2 h-full">
             <div className="bg-white rounded-lg shadow-lg p-6 h-full flex items-center justify-center">
-              <InteractiveMap 
+              <InteractiveMap
                 districts={districts}
                 onDistrictClick={handleDistrictClick}
                 displayMode={displayMode}
@@ -150,11 +150,10 @@ const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }
                   <button
                     key={param.key}
                     onClick={() => setDisplayMode(param.key)}
-                    className={`w-full p-3 rounded-lg text-left font-semibold transition ${
-                      displayMode === param.key 
-                        ? 'bg-blue-600 text-white' 
+                    className={`w-full p-3 rounded-lg text-left font-semibold transition ${displayMode === param.key
+                        ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     <div className="flex justify-between items-center">
                       <span>{param.label}</span>
@@ -169,11 +168,10 @@ const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className={`w-full p-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
-                isRefreshing 
+              className={`w-full p-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${isRefreshing
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800'
-              }`}
+                }`}
             >
               <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
               {isRefreshing ? 'Оновлення...' : 'Оновити дані'}
@@ -185,8 +183,8 @@ const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }
               <div className="space-y-2 text-sm flex-1">
                 {currentLegend.levels.map((level, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <div 
-                      className="w-6 h-6 rounded flex-shrink-0" 
+                    <div
+                      className="w-6 h-6 rounded flex-shrink-0"
                       style={{ backgroundColor: level.color }}
                     ></div>
                     <span>{level.range}: {level.label}</span>

@@ -18,12 +18,10 @@ const pool = new Pool({
   max: 5,
   idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 30000,
-  // ВАЖЛИВО: Додаємо UTF-8 encoding для PostgreSQL
   client_encoding: 'UTF8'
 });
 
 pool.on('connect', (client) => {
-  // Встановлюємо UTF-8 для кожного з'єднання
   client.query('SET CLIENT_ENCODING TO UTF8');
   console.log('✅ База даних підключена (UTF-8)');
 });

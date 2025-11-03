@@ -4,8 +4,10 @@ import AirQualityDetails from '../components/AirQualityDetails/AirQualityDetails
 import AirQualityChart from '../components/AirQualityChart/AirQualityChart';
 import './MonitoringPage.css';
 import AQITimeline from '../components/AQITimeline';
+import { Wrench } from 'lucide-react';
 
-const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict }) => {
+// 🔧 Додай setCurrentPage в пропси
+const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict, setCurrentPage }) => {
   const getAQIColor = (aqi) => {
     if (aqi <= 50) return '#10b981';
     if (aqi <= 100) return '#f59e0b';
@@ -28,10 +30,24 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict }) =>
     <div className="monitoring-page">
       <div className="monitoring-container">
         <header className="monitoring-header">
-          <h1>📊 Моніторинг якості повітря</h1>
-          <p className="monitoring-subtitle">
-            Детальна інформація про стан повітря в районах Львова
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1>📊 Моніторинг якості повітря</h1>
+              <p className="monitoring-subtitle">
+                Детальна інформація про стан повітря в районах Львова
+              </p>
+            </div>
+
+            {/* 🔧 Кнопка для тестування ML */}
+            <button
+              onClick={() => setCurrentPage('ml-test')}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 hover:text-gray-800 transition-all flex items-center gap-2 border border-gray-300"
+              title="Тестування ML моделі (тільки для розробки)"
+            >
+              <Wrench className="w-4 h-4" />
+              <span className="hidden md:inline">Тест ML</span>
+            </button>
+          </div>
         </header>
 
         {/* Список районів */}
@@ -52,14 +68,14 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict }) =>
                 >
                   <div className="district-card-header">
                     <h3>{district.name}</h3>
-                    <div 
+                    <div
                       className="aqi-badge"
                       style={{ backgroundColor: color }}
                     >
                       {aqi}
                     </div>
                   </div>
-                  
+
                   <div className="district-card-status" style={{ color }}>
                     {status}
                   </div>
@@ -83,7 +99,7 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict }) =>
         {/* Timeline тижневого прогнозу */}
         {selectedDistrict && (
           <div className="mb-8">
-            <AQITimeline 
+            <AQITimeline
               districtId={selectedDistrict.id}
               currentAQI={selectedDistrict.baseAQI}
             />
@@ -94,8 +110,8 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict }) =>
         {selectedDistrict && (
           <div className="selected-district-details">
             <AirQualityDetails district={selectedDistrict} />
-            <AirQualityChart 
-              districtId={selectedDistrict.id} 
+            <AirQualityChart
+              districtId={selectedDistrict.id}
               districtName={selectedDistrict.name}
             />
           </div>

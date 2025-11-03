@@ -1,10 +1,10 @@
 // ecolviv-app/src/hooks/useAirQuality.js
 import { useState, useEffect } from 'react';
 import { airQualityAPI } from '../services/api';
-import { districts } from '../data/districts';  // <-- ЗМІНЕНО
+import { districts } from '../data/districts';
 
 export const useAirQuality = () => {
-  const [districtsState, setDistricts] = useState(districts);  // <-- ЗМІНЕНО назву змінної
+  const [districtsState, setDistricts] = useState(districts);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
@@ -74,7 +74,7 @@ export const useAirQuality = () => {
         status: err.response?.status
       });
       setError('Не вдалося завантажити дані. Використовуються тестові дані.');
-      setDistricts(districts);  // <-- ЗМІНЕНО
+      setDistricts(districts);
       setLoading(false);
     }
   };
@@ -89,7 +89,7 @@ export const useAirQuality = () => {
   }, []);
 
   return {
-    districts: districtsState,  // <-- ЗМІНЕНО
+    districts: districtsState,
     loading,
     error,
     lastUpdate,

@@ -73,7 +73,7 @@ def train_district_model(district_id):
     print("\n5️⃣ Оцінка точності на валідації...")
     
     try:
-        metrics = model.evaluate(X_val, y_val)  # ⬅️ ВИПРАВЛЕНО: використовуємо evaluate
+        metrics = model.evaluate(X_val, y_val)
         
         print("\n📊 Метрики по параметрах:")
         for param, values in metrics.items():

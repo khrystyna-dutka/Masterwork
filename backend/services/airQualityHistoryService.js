@@ -73,7 +73,6 @@ class AirQualityHistoryService {
     
   } catch (error) {
     console.error('⚠️ ML перевірка недоступна:', error.message);
-    // Не падаємо - ML перевірка необов'язкова
   }
 }
 
@@ -84,9 +83,9 @@ class AirQualityHistoryService {
     try {
       const intervals = {
         '1h': '1 hour',
-        '12h': '12 hours',   // ⬅️ ДОДАЙ
+        '12h': '12 hours',
         '24h': '24 hours',
-        '48h': '48 hours',   // ⬅️ ДОДАЙ
+        '48h': '48 hours',
         '7d': '7 days',
         '30d': '30 days'
       };

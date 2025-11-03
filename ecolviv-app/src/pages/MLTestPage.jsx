@@ -1,11 +1,11 @@
 // src/pages/MLTestPage.jsx
 
 import React, { useState, useEffect } from 'react';
-import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-  ResponsiveContainer 
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer
 } from 'recharts';
-import { 
+import {
   Target, Activity, PlayCircle, Info, TrendingUp, CheckCircle,
   AlertCircle, Database, Calendar
 } from 'lucide-react';
@@ -17,7 +17,7 @@ const MLTestPage = () => {
   const [selectedParameter, setSelectedParameter] = useState('aqi');
   const [days, setDays] = useState(30);
   const [testSize, setTestSize] = useState(20);
-  
+
   const [dataInfo, setDataInfo] = useState(null);
   const [testResults, setTestResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -53,7 +53,7 @@ const MLTestPage = () => {
   const handleRunTest = async () => {
     setLoading(true);
     setTestResults(null);
-    
+
     try {
       console.log('🧪 Запуск тесту...', { selectedDistrict, days, testSize });
       const results = await mlTestService.runTest(selectedDistrict, days, testSize);
@@ -69,10 +69,10 @@ const MLTestPage = () => {
 
   // Підготовка даних для графіка
   const chartData = testResults?.comparison_data?.map(item => ({
-    time: new Date(item.timestamp).toLocaleString('uk-UA', { 
-      month: 'short', 
-      day: 'numeric', 
-      hour: '2-digit' 
+    time: new Date(item.timestamp).toLocaleString('uk-UA', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit'
     }),
     actual: item.actual[selectedParameter],
     predicted: item.predicted[selectedParameter]
@@ -100,34 +100,34 @@ const MLTestPage = () => {
   };
 
   const metricsDisplay = [
-    { 
-      key: 'mae', 
-      label: 'MAE', 
+    {
+      key: 'mae',
+      label: 'MAE',
       description: 'Середня абсолютна помилка',
       tooltip: 'Середнє відхилення прогнозу від реальності'
     },
-    { 
-      key: 'rmse', 
-      label: 'RMSE', 
+    {
+      key: 'rmse',
+      label: 'RMSE',
       description: 'Корінь середньоквадратичної помилки',
       tooltip: 'Показує загальну точність моделі'
     },
-    { 
-      key: 'mape', 
-      label: 'MAPE', 
+    {
+      key: 'mape',
+      label: 'MAPE',
       description: 'Середня абсолютна % помилка',
       tooltip: 'Помилка у відсотках',
       suffix: '%'
     },
-    { 
-      key: 'r2', 
-      label: 'R²', 
+    {
+      key: 'r2',
+      label: 'R²',
       description: 'Коефіцієнт детермінації',
       tooltip: 'Якість моделі (1.0 = ідеально)'
     },
-    { 
-      key: 'accuracy', 
-      label: 'Точність', 
+    {
+      key: 'accuracy',
+      label: 'Точність',
       description: 'Прогнози в межах ±10%',
       tooltip: 'Відсоток правильних прогнозів',
       suffix: '%'
@@ -340,10 +340,10 @@ const MLTestPage = () => {
                   <Target className="w-6 h-6 text-blue-600" />
                   Метрики точності: {parameters.find(p => p.key === selectedParameter)?.label}
                 </h2>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                   {metricsDisplay.map(metric => (
-                    <div 
+                    <div
                       key={metric.key}
                       className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200"
                       title={metric.tooltip}
@@ -386,38 +386,38 @@ const MLTestPage = () => {
               <h2 className="text-xl font-bold text-gray-800 mb-4">
                 Прогноз vs Реальність: {parameters.find(p => p.key === selectedParameter)?.label}
               </h2>
-              
+
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="time" 
+                  <XAxis
+                    dataKey="time"
                     angle={-45}
                     textAnchor="end"
                     height={100}
                     style={{ fontSize: '12px' }}
                   />
-                  <YAxis 
-                    label={{ 
-                      value: parameters.find(p => p.key === selectedParameter)?.unit || '', 
-                      angle: -90, 
-                      position: 'insideLeft' 
+                  <YAxis
+                    label={{
+                      value: parameters.find(p => p.key === selectedParameter)?.unit || '',
+                      angle: -90,
+                      position: 'insideLeft'
                     }}
                   />
                   <Tooltip />
                   <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="actual" 
-                    stroke="#10b981" 
+                  <Line
+                    type="monotone"
+                    dataKey="actual"
+                    stroke="#10b981"
                     strokeWidth={2}
                     name="Реальність (Test)"
                     dot={{ fill: '#10b981', r: 3 }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="predicted" 
-                    stroke="#3b82f6" 
+                  <Line
+                    type="monotone"
+                    dataKey="predicted"
+                    stroke="#3b82f6"
                     strokeWidth={2}
                     name="Прогноз (ML)"
                     dot={{ fill: '#3b82f6', r: 3 }}
@@ -427,8 +427,8 @@ const MLTestPage = () => {
 
               <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>Пояснення:</strong> Графік показує порівняння прогнозованих ML моделлю значень 
-                  (синя лінія) з реальними даними з тестової вибірки (зелена лінія). 
+                  <strong>Пояснення:</strong> Графік показує порівняння прогнозованих ML моделлю значень
+                  (синя лінія) з реальними даними з тестової вибірки (зелена лінія).
                   Чим ближче лінії одна до одної, тим точніша модель.
                 </p>
               </div>
@@ -455,7 +455,7 @@ const MLTestPage = () => {
               Недостатньо даних
             </h3>
             <p className="text-gray-600">
-              Для тестування потрібно мінімум 100 записів. 
+              Для тестування потрібно мінімум 100 записів.
               Зараз доступно: {dataInfo.total_records}
             </p>
           </div>

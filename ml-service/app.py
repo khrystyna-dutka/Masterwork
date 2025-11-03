@@ -914,7 +914,7 @@ def test_model():
             'test5_overfitting': bool(test5_passed),
             'total_passed': int(checks_passed),
             'total_tests': int(total_checks),
-            'anomaly_analysis': anomaly_details,  # ✅ Додано!
+            'anomaly_analysis': anomaly_details,
             'top_features': [
                 {
                     'feature': str(row['feature']),

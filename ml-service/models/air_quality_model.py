@@ -27,36 +27,19 @@ class AirQualityModel:
     def create_model(self):
         """Створити модель з ANTI-OVERFITTING параметрами"""
         if self.model_type == 'xgboost':
-            # ✅ ВИПРАВЛЕНО: Параметри проти overfitting
             base_model = xgb.XGBRegressor(
-                # Менше дерев
-                n_estimators=50,          # Було: 200
-                
-                # Менша глибина
-                max_depth=4,              # Було: 8
-                
-                # Вищий learning rate
-                learning_rate=0.1,        # Було: 0.05
-                
-                # Мінімум зразків на листі
-                min_child_weight=5,       # Додано!
-                
-                # Менше features на кожному split
-                subsample=0.7,            # Було: 0.8
-                colsample_bytree=0.7,     # Було: 0.8
-                colsample_bylevel=0.7,    # Додано!
-                
-                # L1 і L2 регуляризація
-                reg_alpha=1.0,            # Додано! (L1)
-                reg_lambda=1.0,           # Додано! (L2)
-                
-                # Gamma (мінімальний виграш для split)
-                gamma=0.5,                # Додано!
-                
+                n_estimators=50,          
+                max_depth=4,              
+                learning_rate=0.1,        
+                min_child_weight=5,       
+                subsample=0.7,            
+                colsample_bytree=0.7,     
+                colsample_bylevel=0.7,    
+                reg_alpha=1.0,
+                reg_lambda=1.0,
+                gamma=0.5,                  
                 random_state=42,
                 n_jobs=-1
-                
-                # ❌ ПРИБРАЛИ early_stopping_rounds - він для fit(), а не для конструктора!
             )
         elif self.model_type == 'random_forest':
             base_model = RandomForestRegressor(
@@ -82,8 +65,7 @@ class AirQualityModel:
         # Створити модель
         self.create_model()
         
-        # ✅ ВИПРАВЛЕНО: Просте навчання без early stopping
-        # (early stopping складно реалізувати з MultiOutputRegressor)
+        # Навчити модель
         self.model.fit(X_train, y_train)
         
         # Оцінити якість

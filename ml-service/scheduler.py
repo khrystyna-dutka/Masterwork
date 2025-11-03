@@ -29,10 +29,8 @@ def check_and_retrain_all():
     
     print(f"{'='*70}\n")
 
-# ⬇️ ЗМІНИЛИ: Кожну годину замість 6 годин!
 schedule.every(1).hour.do(check_and_retrain_all)
 
-# ⬇️ ДОДАЛИ: Перша перевірка одразу при запуску
 check_and_retrain_all()
 
 print("🤖 Real-time Model Monitor запущено!")

@@ -34,12 +34,12 @@ const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
 
     // Успішний вхід/реєстрація
     setIsLoggedIn(true);
-    setUserData({ 
-      name: name || 'Користувач', 
+    setUserData({
+      name: name || 'Користувач',
       email,
-      notifications: { 
-        email: true, 
-        telegram: false 
+      notifications: {
+        email: true,
+        telegram: false
       },
       subscribedDistricts: [],
       notificationTime: '08:00'
@@ -139,8 +139,8 @@ const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
             }}
             className="text-blue-600 hover:text-blue-700 text-sm font-medium"
           >
-            {isLogin 
-              ? 'Немає акаунту? Зареєструватися' 
+            {isLogin
+              ? 'Немає акаунту? Зареєструватися'
               : 'Вже є акаунт? Увійти'
             }
           </button>
