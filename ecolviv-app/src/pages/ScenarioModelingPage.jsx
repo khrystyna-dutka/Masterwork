@@ -598,7 +598,7 @@ const ScenarioModelingPage = () => {
               label="Зелені зони"
               value={changes.trees_change}
               onChange={(v) => setChanges({ ...changes, trees_change: v })}
-              min={-30}
+              min={-50}
               max={50}
               step={5}
               unit="%"
