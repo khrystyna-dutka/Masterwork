@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const app = express();
 const forecastRoutes = require('./routes/forecast');
+const weeklyForecastController = require('./controllers/weeklyForecastController');
 
 // Налаштування безпеки
 app.use(helmet());
@@ -50,6 +51,9 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Тижневий прогноз
+app.get('/api/forecast/weekly/:districtId', weeklyForecastController.getWeeklyForecast);
 
 // Імпорт маршрутів
 try {

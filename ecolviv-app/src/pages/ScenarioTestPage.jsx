@@ -7,11 +7,182 @@ import {
 } from 'recharts';
 import {
   Flame, Factory, Cloud, Wind, CheckCircle, Play, AlertTriangle,
-  TrendingUp, TrendingDown, Clock, Target, ArrowDown, ArrowUp
+  TrendingUp, TrendingDown, Clock, Target, ArrowDown, ArrowUp, Settings
 } from 'lucide-react';
 import scenarioTestService from '../services/scenarioTestService';
 import { districts } from '../data/districts';
 
+// Компонент форми для власного сценарію
+const CustomScenarioForm = ({ onSubmit, loading }) => {
+  const [values, setValues] = useState({
+    pm25: 50,
+    pm10: 80,
+    no2: 40,
+    so2: 20,
+    co: 1000,
+    o3: 60,
+    temperature: 20,
+    humidity: 60,
+    pressure: 1013,
+    wind_speed: 3,
+    wind_direction: 180
+  });
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const parameterConfig = [
+    { key: 'pm25', label: 'PM2.5', unit: 'μg/m³', min: 0, max: 500, step: 5, color: 'red' },
+    { key: 'pm10', label: 'PM10', unit: 'μg/m³', min: 0, max: 600, step: 5, color: 'orange' },
+    { key: 'no2', label: 'NO₂', unit: 'μg/m³', min: 0, max: 400, step: 5, color: 'blue' },
+    { key: 'so2', label: 'SO₂', unit: 'μg/m³', min: 0, max: 300, step: 5, color: 'purple' },
+    { key: 'co', label: 'CO', unit: 'μg/m³', min: 0, max: 10000, step: 100, color: 'cyan' },
+    { key: 'o3', label: 'O₃', unit: 'μg/m³', min: 0, max: 300, step: 5, color: 'green' }
+  ];
+
+  const weatherConfig = [
+    { key: 'temperature', label: 'Температура', unit: '°C', min: -20, max: 40, step: 1 },
+    { key: 'humidity', label: 'Вологість', unit: '%', min: 0, max: 100, step: 5 },
+    { key: 'pressure', label: 'Тиск', unit: 'hPa', min: 980, max: 1040, step: 1 },
+    { key: 'wind_speed', label: 'Швидкість вітру', unit: 'm/s', min: 0, max: 30, step: 0.5 }
+  ];
+
+  const handleChange = (key, value) => {
+    setValues(prev => ({ ...prev, [key]: parseFloat(value) }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(values);
+  };
+
+  const getColorClass = (color) => {
+    const colors = {
+      red: 'bg-red-500',
+      orange: 'bg-orange-500',
+      blue: 'bg-blue-500',
+      purple: 'bg-purple-500',
+      cyan: 'bg-cyan-500',
+      green: 'bg-green-500'
+    };
+    return colors[color] || 'bg-gray-500';
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-md p-6 mb-6 border-2 border-purple-300">
+      <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <Settings className="w-6 h-6 text-purple-600" />
+        Налаштування власного сценарію
+      </h3>
+
+      <form onSubmit={handleSubmit}>
+        {/* Основні параметри */}
+        <div className="mb-6">
+          <h4 className="font-semibold text-gray-700 mb-4">Параметри забруднення:</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {parameterConfig.map(param => (
+              <div key={param.key} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${getColorClass(param.color)}`}></div>
+                    {param.label}
+                  </label>
+                  <span className="text-sm font-bold text-gray-800">
+                    {values[param.key]} {param.unit}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={param.min}
+                  max={param.max}
+                  step={param.step}
+                  value={values[param.key]}
+                  onChange={(e) => handleChange(param.key, e.target.value)}
+                  className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gray-200"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>{param.min}</span>
+                  <span>{param.max}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Додаткові параметри */}
+        <div className="mb-6">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 font-medium mb-4"
+          >
+            {showAdvanced ? '▼' : '▶'} Додаткові параметри (метео)
+          </button>
+
+          {showAdvanced && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-purple-200">
+              {weatherConfig.map(param => (
+                <div key={param.key} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">
+                      {param.label}
+                    </label>
+                    <span className="text-sm font-bold text-gray-800">
+                      {values[param.key]} {param.unit}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={param.min}
+                    max={param.max}
+                    step={param.step}
+                    value={values[param.key]}
+                    onChange={(e) => handleChange(param.key, e.target.value)}
+                    className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gray-200"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>{param.min}</span>
+                    <span>{param.max}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Кнопка */}
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
+            loading
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg'
+          }`}
+        >
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              Тестування...
+            </>
+          ) : (
+            <>
+              <Play className="w-5 h-5" />
+              Запустити тест з власними параметрами
+            </>
+          )}
+        </button>
+      </form>
+
+      <div className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+        <p className="text-xs text-purple-800">
+          💡 Встановіть екстремальні значення, щоб перевірити прогноз відновлення
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// Головний компонент
 const ScenarioTestPage = () => {
   const [selectedDistrict, setSelectedDistrict] = useState(1);
   const [scenarios, setScenarios] = useState([]);
@@ -60,17 +231,25 @@ const ScenarioTestPage = () => {
     }
   };
 
-  const handleRunTest = async () => {
+  const handleRunTest = async (customValues = null) => {
     if (!selectedScenario) return;
 
     setLoading(true);
     setTestResults(null);
 
     try {
+      console.log('🔥 Запуск тесту:', {
+        district: selectedDistrict,
+        scenario: selectedScenario.id,
+        customValues
+      });
+
       const result = await scenarioTestService.runTest(
         selectedDistrict,
-        selectedScenario.id
+        selectedScenario.id,
+        customValues
       );
+      
       setTestResults(result);
     } catch (error) {
       console.error('❌ Помилка:', error);
@@ -80,7 +259,6 @@ const ScenarioTestPage = () => {
     }
   };
 
-  // Підготовка даних для графіка вибраного параметра
   const chartData = testResults?.forecasts?.map(item => ({
     hour: `+${item.hour}г`,
     value: item[selectedParameter],
@@ -117,40 +295,22 @@ const ScenarioTestPage = () => {
           </p>
         </div>
 
-        {/* Панель налаштувань */}
+        {/* Вибір району */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Район для тестування
-              </label>
-              <select
-                value={selectedDistrict}
-                onChange={(e) => setSelectedDistrict(parseInt(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-              >
-                {districts.map(district => (
-                  <option key={district.id} value={district.id}>
-                    {district.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Дія
-              </label>
-              <button
-                onClick={handleRunTest}
-                disabled={loading || !selectedScenario}
-                className="w-full flex items-center justify-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Play className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                {loading ? 'Тестування...' : 'Запустити тест'}
-              </button>
-            </div>
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Район для тестування
+          </label>
+          <select
+            value={selectedDistrict}
+            onChange={(e) => setSelectedDistrict(parseInt(e.target.value))}
+            className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+          >
+            {districts.map(district => (
+              <option key={district.id} value={district.id}>
+                {district.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Вибір сценарію */}
@@ -164,14 +324,17 @@ const ScenarioTestPage = () => {
                 <div
                   key={scenario.id}
                   onClick={() => setSelectedScenario(scenario)}
-                  className={`bg-white rounded-xl shadow-md p-6 cursor-pointer transition-all hover:shadow-lg ${isSelected ? 'ring-2 ring-orange-500 shadow-orange-200' : ''
-                    }`}
+                  className={`bg-white rounded-xl shadow-md p-6 cursor-pointer transition-all hover:shadow-lg ${
+                    isSelected ? 'ring-2 ring-orange-500 shadow-orange-200' : ''
+                  }`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-lg ${isSelected ? 'bg-orange-100' : 'bg-gray-100'
-                      }`}>
-                      <IconComponent className={`w-8 h-8 ${isSelected ? 'text-orange-600' : 'text-gray-600'
-                        }`} />
+                    <div className={`p-3 rounded-lg ${
+                      isSelected ? 'bg-orange-100' : 'bg-gray-100'
+                    }`}>
+                      <IconComponent className={`w-8 h-8 ${
+                        isSelected ? 'text-orange-600' : 'text-gray-600'
+                      }`} />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-gray-800 mb-1">
@@ -199,7 +362,75 @@ const ScenarioTestPage = () => {
                 </div>
               );
             })}
+
+            {/* ВЛАСНИЙ СЦЕНАРІЙ */}
+            <div
+              onClick={() => setSelectedScenario({
+                id: 'custom',
+                name: 'Власний сценарій',
+                description: 'Задайте власні значення забруднення',
+                icon: '⚙️',
+                values: {}
+              })}
+              className={`bg-white rounded-xl shadow-md p-6 cursor-pointer transition-all hover:shadow-lg ${
+                selectedScenario?.id === 'custom' ? 'ring-2 ring-purple-500 shadow-purple-200' : ''
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-lg ${
+                  selectedScenario?.id === 'custom' ? 'bg-purple-100' : 'bg-gray-100'
+                }`}>
+                  <Settings className={`w-8 h-8 ${
+                    selectedScenario?.id === 'custom' ? 'text-purple-600' : 'text-gray-600'
+                  }`} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-800 mb-1">
+                    Власний сценарій
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Задайте власні значення забруднення
+                  </p>
+                  <div className="text-xs text-purple-600 font-semibold">
+                    Налаштуйте всі параметри →
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* Форма власного сценарію */}
+        {selectedScenario?.id === 'custom' && (
+          <CustomScenarioForm 
+            onSubmit={(values) => handleRunTest(values)}
+            loading={loading}
+          />
+        )}
+
+        {/* Кнопка для готових сценаріїв */}
+        {selectedScenario && selectedScenario.id !== 'custom' && (
+          <button
+            onClick={() => handleRunTest()}
+            disabled={loading}
+            className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-lg transition-all mb-6 ${
+              loading
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:shadow-xl hover:scale-105'
+            }`}
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                Тестування...
+              </>
+            ) : (
+              <>
+                <Play className="w-6 h-6" />
+                Запустити тест сценарію
+              </>
+            )}
+          </button>
         )}
 
         {/* Індикатор завантаження */}
@@ -251,8 +482,9 @@ const ScenarioTestPage = () => {
                           <h3 className="font-bold text-gray-800">{parameterInfo[param].label}</h3>
                           <p className="text-xs text-gray-500">{parameterInfo[param].unit}</p>
                         </div>
-                        <div className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(details.final_status)
-                          }`}>
+                        <div className={`px-2 py-1 rounded text-xs font-semibold ${
+                          getStatusColor(details.final_status)
+                        }`}>
                           {getStatusLabel(details.final_status)}
                         </div>
                       </div>
@@ -268,8 +500,9 @@ const ScenarioTestPage = () => {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Зміна:</span>
-                          <span className={`font-bold flex items-center gap-1 ${details.percent_change < 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
+                          <span className={`font-bold flex items-center gap-1 ${
+                            details.percent_change < 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
                             {details.percent_change < 0 ? (
                               <ArrowDown className="w-4 h-4" />
                             ) : (
@@ -310,10 +543,11 @@ const ScenarioTestPage = () => {
               </div>
 
               {/* Загальний висновок */}
-              <div className={`mt-6 p-4 rounded-lg border-2 ${testResults.analysis.all_parameters_safe
+              <div className={`mt-6 p-4 rounded-lg border-2 ${
+                testResults.analysis.all_parameters_safe
                   ? 'bg-green-50 border-green-300'
                   : 'bg-orange-50 border-orange-300'
-                }`}>
+              }`}>
                 {testResults.analysis.all_parameters_safe ? (
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />
@@ -381,7 +615,6 @@ const ScenarioTestPage = () => {
                   <YAxis label={{ value: currentParam.unit, angle: -90, position: 'insideLeft' }} />
                   <Tooltip />
 
-                  {/* Зони безпеки */}
                   <ReferenceLine
                     y={currentParam.safe}
                     stroke="#10b981"
