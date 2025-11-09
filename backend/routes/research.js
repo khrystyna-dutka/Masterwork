@@ -93,18 +93,46 @@ router.post('/train-custom-model', upload.single('dataset'), async (req, res) =>
 
 /**
  * GET /api/research/download-template
- * Завантажити шаблон CSV
+ * Завантажити шаблон CSV з більшою кількістю даних
  */
 router.get('/download-template', (req, res) => {
-  const template = `timestamp,pm25,pm10,no2,so2,co,o3,temperature,humidity,pressure,wind_speed,wind_direction
-2024-01-01 00:00:00,25.5,45.2,35.1,15.2,800,65.3,15.5,75,1013,3.2,180
-2024-01-01 01:00:00,23.1,42.8,33.5,14.8,780,63.1,15.2,76,1013,3.0,175
-2024-01-01 02:00:00,21.2,40.5,31.2,14.1,760,61.5,14.8,77,1014,2.8,170
-2024-01-01 03:00:00,19.8,38.2,29.8,13.5,740,59.8,14.5,78,1014,2.5,165
-2024-01-01 04:00:00,18.5,36.1,28.5,13.0,720,58.2,14.2,79,1015,2.3,160`;
+  const rows = [];
+  const startDate = new Date('2024-01-01T00:00:00');
+  
+  // 🆕 Змінюємо 100 на 1000!
+  for (let i = 0; i < 1000; i++) {
+    const date = new Date(startDate.getTime() + i * 3600000);
+    const hour = date.getHours();
+    const day = Math.floor(i / 24);
+    
+    // Більш реалістичні значення з трендами
+    const weekendEffect = (day % 7 >= 5) ? 0.7 : 1.0;
+    const rushHourEffect = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19) ? 1.3 : 1.0;
+    
+    const pm25 = (20 + Math.sin(i / 50) * 10 + Math.sin(hour / 24 * Math.PI) * 5) * weekendEffect * rushHourEffect + Math.random() * 3;
+    const pm10 = pm25 * 1.5 + Math.random() * 5;
+    const no2 = (30 + Math.cos(i / 40) * 10 + Math.sin(hour / 12 * Math.PI) * 8) * rushHourEffect + Math.random() * 3;
+    const so2 = 15 + Math.sin(i / 60) * 5 + Math.random() * 2;
+    const co = (700 + Math.cos(i / 30) * 200 + Math.sin(hour / 12 * Math.PI) * 100) * rushHourEffect + Math.random() * 30;
+    const o3 = Math.max(0, 60 + Math.sin((hour - 12) / 12 * Math.PI) * 30 + Math.random() * 10);
+    
+    const temp = 15 + Math.sin((day / 365) * Math.PI * 2) * 10 + Math.sin((hour - 6) / 12 * Math.PI) * 8;
+    const humidity = 65 + Math.cos((hour - 12) / 12 * Math.PI) * 15 + Math.random() * 5;
+    const pressure = 1013 + Math.sin(day / 30 * Math.PI) * 10 + Math.random() * 3;
+    const windSpeed = 3 + Math.sin(i / 20) * 2 + Math.random() * 2;
+    const windDirection = Math.floor(Math.random() * 360);
+    
+    const timestamp = date.toISOString().replace('T', ' ').substring(0, 19);
+    
+    rows.push(
+      `${timestamp},${pm25.toFixed(1)},${pm10.toFixed(1)},${no2.toFixed(1)},${so2.toFixed(1)},${co.toFixed(1)},${o3.toFixed(1)},${temp.toFixed(1)},${humidity.toFixed(1)},${pressure.toFixed(1)},${windSpeed.toFixed(1)},${windDirection}`
+    );
+  }
+  
+  const template = `timestamp,pm25,pm10,no2,so2,co,o3,temperature,humidity,pressure,wind_speed,wind_direction\n${rows.join('\n')}`;
 
   res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', 'attachment; filename=air_quality_template.csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=air_quality_template_1000rows.csv');
   res.send(template);
 });
 
