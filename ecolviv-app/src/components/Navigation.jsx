@@ -1,7 +1,7 @@
 // src/components/Navigation.jsx
 
 import React, { useState } from 'react';
-import { Wind, Home, Navigation as NavIcon, BarChart3, User, LogIn, Menu, X, LogOut, Flame, Sparkles } from 'lucide-react';
+import { Wind, Home, Navigation as NavIcon, BarChart3, User, LogIn, Menu, X, LogOut, Flame, Sparkles, Brain } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Navigation = ({ currentPage, setCurrentPage }) => {
@@ -13,7 +13,8 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
     { id: 'map', label: 'Карта', icon: NavIcon },
     { id: 'monitoring', label: 'Моніторинг', icon: BarChart3 },
     { id: 'scenario-test', label: 'Сценарії', icon: Flame },
-    { id: 'scenario-modeling', label: 'Моделювання', icon: Sparkles }
+    { id: 'scenario-modeling', label: 'Моделювання', icon: Sparkles },
+    { id: 'research', label: 'Дослідження', icon: Brain }
   ];
 
   const handleLogout = () => {
@@ -35,57 +36,78 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
             <span className="text-xl font-bold text-gray-800">EcoLviv</span>
           </div>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-6">
+          {/* Desktop Menu - з текстом */}
+          <div className="hidden md:flex items-center gap-4">
             {navItems.map(item => {
               const Icon = item.icon;
               return (
                 <button
                   key={item.id}
                   onClick={() => setCurrentPage(item.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition ${currentPage === item.id
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition text-sm ${
+                    currentPage === item.id
                       ? 'bg-blue-50 text-blue-600'
                       : 'text-gray-600 hover:bg-gray-50'
-                    }`}
+                  }`}
                 >
-                  <Icon size={20} />
+                  <Icon size={18} />
                   {item.label}
                 </button>
               );
             })}
 
+            {/* Акаунт - тільки іконки з полосочкою */}
             {isAuthenticated ? (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setCurrentPage('profile')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${currentPage === 'profile'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+              <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
+                <div className="relative group">
+                  <button
+                    onClick={() => setCurrentPage('profile')}
+                    className={`p-2.5 rounded-lg transition-all ${
+                      currentPage === 'profile'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
                     }`}
-                >
-                  <User size={20} />
-                  {user?.full_name || 'Профіль'}
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
-                >
-                  <LogOut size={20} />
-                  Вийти
-                </button>
+                  >
+                    <User size={20} />
+                  </button>
+                  {/* Tooltip */}
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    {user?.full_name || 'Профіль'}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                  </div>
+                </div>
+                <div className="relative group">
+                  <button
+                    onClick={handleLogout}
+                    className="p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                  >
+                    <LogOut size={20} />
+                  </button>
+                  {/* Tooltip */}
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    Вийти
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setCurrentPage('login')}
-                  className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                >
-                  <LogIn size={20} />
-                  Увійти
-                </button>
+              <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
+                <div className="relative group">
+                  <button
+                    onClick={() => setCurrentPage('login')}
+                    className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                  >
+                    <LogIn size={20} />
+                  </button>
+                  {/* Tooltip */}
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    Увійти
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                  </div>
+                </div>
                 <button
                   onClick={() => setCurrentPage('register')}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
                 >
                   Реєстрація
                 </button>
@@ -114,10 +136,14 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
                     setCurrentPage(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50"
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                    currentPage === item.id
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
                 >
                   <Icon size={20} />
-                  {item.label}
+                  <span className="font-medium">{item.label}</span>
                 </button>
               );
             })}
@@ -129,14 +155,14 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
                     setCurrentPage('profile');
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg"
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-blue-100 text-blue-600 rounded-lg font-medium"
                 >
                   <User size={20} />
                   {user?.full_name || 'Профіль'}
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
                 >
                   <LogOut size={20} />
                   Вийти
@@ -149,7 +175,7 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
                     setCurrentPage('login');
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
                 >
                   <LogIn size={20} />
                   Увійти
@@ -159,7 +185,7 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
                     setCurrentPage('register');
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg"
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium"
                 >
                   Реєстрація
                 </button>

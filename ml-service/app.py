@@ -7,11 +7,15 @@ from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 import traceback
+from routes.research import research_bp
 
 app = Flask(__name__)
 CORS(app)
 
 db = DatabaseHelper()
+
+# Реєстрація blueprint
+app.register_blueprint(research_bp, url_prefix='/api/research')
 
 # ==================== HELPER FUNCTIONS ====================
 

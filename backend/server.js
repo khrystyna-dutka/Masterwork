@@ -9,6 +9,7 @@ const morgan = require('morgan');
 const app = express();
 const forecastRoutes = require('./routes/forecast');
 const weeklyForecastController = require('./controllers/weeklyForecastController');
+const researchRoutes = require('./routes/research');
 
 // Налаштування безпеки
 app.use(helmet());
@@ -32,6 +33,9 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/forecast', forecastRoutes);
 console.log('✅ Forecast routes підключено');
+
+// Research (наукові дослідження)
+app.use('/api/research', researchRoutes);
 
 // Базовий маршрут
 app.get('/', (req, res) => {

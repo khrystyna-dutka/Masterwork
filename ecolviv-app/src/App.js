@@ -12,6 +12,7 @@ import { useAirQuality } from './hooks/useAirQuality';
 import MLTestPage from './pages/MLTestPage';
 import ScenarioTestPage from './pages/ScenarioTestPage';
 import ScenarioModelingPage from './pages/ScenarioModelingPage';
+import ResearchPage from './pages/ResearchPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -100,6 +101,10 @@ function App() {
 
             {currentPage === 'scenario-test' && (
               <ScenarioTestPage />
+            )}
+
+            {currentPage === 'research' && (
+              <ResearchPage />
             )}
           </>
         )}
