@@ -10,8 +10,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import xgboost as xgb
-from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow import keras  # type: ignore
+from tensorflow.keras import layers  # type: ignore
 import json
 import matplotlib
 matplotlib.use('Agg')  # Для серверного використання

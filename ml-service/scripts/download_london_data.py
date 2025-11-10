@@ -5,6 +5,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 import time
 import json
+import numpy as np
+import os
 
 def fetch_openaq_data():
     """
