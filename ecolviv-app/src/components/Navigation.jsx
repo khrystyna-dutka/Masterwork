@@ -3,18 +3,21 @@
 import React, { useState } from 'react';
 import { Wind, Home, Navigation as NavIcon, BarChart3, User, LogIn, Menu, X, LogOut, Flame, Sparkles, Brain } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Navigation = ({ currentPage, setCurrentPage }) => {
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
 
   const navItems = [
-    { id: 'home', label: 'Головна', icon: Home },
-    { id: 'map', label: 'Карта', icon: NavIcon },
-    { id: 'monitoring', label: 'Моніторинг', icon: BarChart3 },
-    { id: 'scenario-test', label: 'Сценарії', icon: Flame },
-    { id: 'scenario-modeling', label: 'Моделювання', icon: Sparkles },
-    { id: 'research', label: 'Дослідження', icon: Brain }
+    { id: 'home', label: t('nav.home'), icon: Home },
+    { id: 'map', label: t('nav.map'), icon: NavIcon },
+    { id: 'monitoring', label: t('nav.monitoring'), icon: BarChart3 },
+    { id: 'scenario-test', label: t('nav.scenarios'), icon: Flame },
+    { id: 'scenario-modeling', label: t('nav.modeling'), icon: Sparkles },
+    { id: 'research', label: t('nav.research'), icon: Brain }
   ];
 
   const handleLogout = () => {
@@ -36,7 +39,7 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
             <span className="text-xl font-bold text-gray-800">EcoLviv</span>
           </div>
 
-          {/* Desktop Menu - з текстом */}
+          {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-4">
             {navItems.map(item => {
               const Icon = item.icon;
@@ -56,63 +59,62 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
               );
             })}
 
-            {/* Акаунт - тільки іконки з полосочкою */}
-            {isAuthenticated ? (
-              <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
-                <div className="relative group">
-                  <button
-                    onClick={() => setCurrentPage('profile')}
-                    className={`p-2.5 rounded-lg transition-all ${
-                      currentPage === 'profile'
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                    }`}
-                  >
-                    <User size={20} />
-                  </button>
-                  {/* Tooltip */}
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                    {user?.full_name || 'Профіль'}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+            {/* Риска + Мова + Акаунт */}
+            <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
+              {/* Перемикач мови */}
+              <LanguageSwitcher />
+
+              {/* Акаунт */}
+              {isAuthenticated ? (
+                <>
+                  <div className="relative group">
+                    <button
+                      onClick={() => setCurrentPage('profile')}
+                      className="p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                    >
+                      <User size={20} />
+                    </button>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      {user?.full_name || t('nav.profile')}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                    </div>
                   </div>
-                </div>
-                <div className="relative group">
-                  <button
-                    onClick={handleLogout}
-                    className="p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-                  >
-                    <LogOut size={20} />
-                  </button>
-                  {/* Tooltip */}
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                    Вийти
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                  <div className="relative group">
+                    <button
+                      onClick={handleLogout}
+                      className="p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                    >
+                      <LogOut size={20} />
+                    </button>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      {t('nav.logout')}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
-                <div className="relative group">
-                  <button
-                    onClick={() => setCurrentPage('login')}
-                    className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                  >
-                    <LogIn size={20} />
-                  </button>
-                  {/* Tooltip */}
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                    Увійти
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                </>
+              ) : (
+                <>
+                  <div className="relative group">
+                    <button
+                      onClick={() => setCurrentPage('login')}
+                      className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                    >
+                      <LogIn size={20} />
+                    </button>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      {t('nav.login')}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                    </div>
                   </div>
-                </div>
-                <button
-                  onClick={() => setCurrentPage('register')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-                >
-                  Реєстрація
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={() => setCurrentPage('register')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                  >
+                    {t('nav.register')}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
@@ -148,6 +150,11 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
               );
             })}
 
+            {/* Перемикач мови в мобільному */}
+            <div className="px-4 py-2">
+              <LanguageSwitcher />
+            </div>
+
             {isAuthenticated ? (
               <>
                 <button
@@ -158,14 +165,14 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
                   className="w-full flex items-center gap-3 px-4 py-3 bg-blue-100 text-blue-600 rounded-lg font-medium"
                 >
                   <User size={20} />
-                  {user?.full_name || 'Профіль'}
+                  {user?.full_name || t('nav.profile')}
                 </button>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
                 >
                   <LogOut size={20} />
-                  Вийти
+                  {t('nav.logout')}
                 </button>
               </>
             ) : (
@@ -178,7 +185,7 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
                   className="w-full flex items-center gap-3 px-4 py-3 text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
                 >
                   <LogIn size={20} />
-                  Увійти
+                  {t('nav.login')}
                 </button>
                 <button
                   onClick={() => {
@@ -187,7 +194,7 @@ const Navigation = ({ currentPage, setCurrentPage }) => {
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium"
                 >
-                  Реєстрація
+                  {t('nav.register')}
                 </button>
               </>
             )}

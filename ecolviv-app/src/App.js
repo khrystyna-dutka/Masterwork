@@ -13,6 +13,7 @@ import MLTestPage from './pages/MLTestPage';
 import ScenarioTestPage from './pages/ScenarioTestPage';
 import ScenarioModelingPage from './pages/ScenarioModelingPage';
 import ResearchPage from './pages/ResearchPage';
+import './i18n';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
