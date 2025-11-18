@@ -1,6 +1,7 @@
 // ecolviv-app/src/pages/ScenarioModelingPage.jsx
 
 import React, { useState, useEffect } from 'react';
+import { getLocalizedDistrictName } from '../utils/districts';
 import {
   TreePine,
   Car,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { districts as localDistricts } from '../data/districts';
 
 // Кругова діаграма для району
 const DistrictPieChart = ({ data, size = 150 }) => {
@@ -300,7 +302,7 @@ const ParameterSlider = ({ icon: Icon, label, value, onChange, min, max, step, u
 
 // AQI індикатор
 const AQIIndicator = ({ aqi, status, change }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const getColor = (aqi) => {
     if (aqi <= 50) return 'bg-green-500';
@@ -313,10 +315,24 @@ const AQIIndicator = ({ aqi, status, change }) => {
 
   const translateStatus = (rawStatus) => {
     if (!rawStatus) return '';
-    const key = rawStatus
-      .replace(/\s+/g, '_')
-      .replace(/[^A-Za-z0-9_]/g, '');
-    return t(`scenario.aqiStatus.${key}`, rawStatus);
+    
+    // Якщо англійська мова активна, перекладаємо
+    if (i18n.language === 'en') {
+      // Мапінг українських статусів на англійські
+      const statusMap = {
+        'Добра': 'Good',
+        'Помірна': 'Moderate',
+        'Нездорова для чутливих груп': 'Unhealthy for Sensitive Groups',
+        'Нездорова': 'Unhealthy',
+        'Дуже нездорова': 'Very Unhealthy',
+        'Небезпечна': 'Hazardous'
+      };
+      
+      return statusMap[rawStatus] || rawStatus;
+    }
+    
+    // Для української повертаємо як є
+    return rawStatus;
   };
 
   return (
@@ -402,7 +418,7 @@ const PRESET_SCENARIOS = [
 
 // Головний компонент
 const ScenarioModelingPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [districts, setDistricts] = useState([]);
   const [selectedDistrict, setSelectedDistrict] = useState(null);
@@ -420,17 +436,27 @@ const ScenarioModelingPage = () => {
   const [simulationResult, setSimulationResult] = useState(null);
 
   useEffect(() => {
-    const loadDistricts = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/air-quality/districts');
-        setDistricts(response.data.data);
-        if (response.data.data.length > 0) {
-          setSelectedDistrict(response.data.data[0].id);
-        }
-      } catch (error) {
-        console.error('Помилка завантаження районів:', error);
-      }
-    };
+const loadDistricts = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/api/air-quality/districts');
+    
+    // Об'єднуємо дані з API та локальні назви
+    const enrichedDistricts = response.data.data.map(apiDistrict => {
+      const localDistrict = localDistricts.find(d => d.id === apiDistrict.id);
+      return {
+        ...apiDistrict,
+        nameEn: localDistrict?.nameEn
+      };
+    });
+    
+    setDistricts(enrichedDistricts);
+    if (enrichedDistricts.length > 0) {
+      setSelectedDistrict(enrichedDistricts[0].id);
+    }
+  } catch (error) {
+    console.error('Помилка завантаження районів:', error);
+  }
+};
     loadDistricts();
   }, []);
 
@@ -547,11 +573,11 @@ const ScenarioModelingPage = () => {
                   handleReset();
                 }}
                 className={`p-4 rounded-lg border-2 transition-all font-semibold ${selectedDistrict === district.id
-                    ? 'border-blue-500 bg-blue-50 shadow-md scale-105'
-                    : 'border-gray-200 hover:border-blue-300 bg-white'
+                  ? 'border-blue-500 bg-blue-50 shadow-md scale-105'
+                  : 'border-gray-200 hover:border-blue-300 bg-white'
                   }`}
               >
-                {district.name}
+                {getLocalizedDistrictName(district, i18n)}
               </button>
             ))}
           </div>
@@ -569,8 +595,8 @@ const ScenarioModelingPage = () => {
                 key={preset.id}
                 onClick={() => applyPreset(preset)}
                 className={`group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-105 border-2 ${preset.negative
-                    ? 'border-red-200 hover:border-red-400 bg-red-50'
-                    : 'border-green-200 hover:border-green-400 bg-green-50'
+                  ? 'border-red-200 hover:border-red-400 bg-red-50'
+                  : 'border-green-200 hover:border-green-400 bg-green-50'
                   }`}
               >
                 <div className="flex items-start gap-3">
@@ -653,8 +679,8 @@ const ScenarioModelingPage = () => {
               onClick={handleSimulate}
               disabled={!hasChanges || simulating}
               className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition-all ${!hasChanges || simulating
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-500 to-green-500 text-white hover:shadow-xl hover:scale-105'
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-500 to-green-500 text-white hover:shadow-xl hover:scale-105'
                 }`}
             >
               <Play className="w-5 h-5" />
@@ -733,8 +759,8 @@ const ScenarioModelingPage = () => {
               </div>
 
               <div className={`mt-6 p-6 rounded-xl border-2 max-w-4xl mx-auto ${simulationResult.summary.overall_improvement
-                  ? 'bg-green-50 border-green-300'
-                  : 'bg-red-50 border-red-300'
+                ? 'bg-green-50 border-green-300'
+                : 'bg-red-50 border-red-300'
                 }`}>
                 <div className="flex items-start gap-4">
                   {simulationResult.summary.overall_improvement ? (

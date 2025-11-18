@@ -2,9 +2,10 @@
 import React from 'react';
 import './AirQualityDetails.css';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedDistrictName } from '../../utils/districts';
 
 const AirQualityDetails = ({ district }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const pollutants = [
     {
@@ -73,7 +74,7 @@ const AirQualityDetails = ({ district }) => {
     <div className="air-quality-details">
       <div className="details-header">
         <h3>
-          {t('airQualityDetails.headerTitle', { name: district.name })}
+          {t('airQualityDetails.headerTitle', { name: getLocalizedDistrictName(district, i18n) })}
         </h3>
         {district.timestamp && (
           <p className="update-time">

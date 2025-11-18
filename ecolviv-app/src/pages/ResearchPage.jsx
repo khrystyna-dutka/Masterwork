@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import {
-  Upload, Settings, PlayCircle, TrendingUp, Database,
+  Upload, Settings, PlayCircle, Database,
   Brain, BarChart, Download, ChevronRight, CheckCircle,
   AlertCircle, Zap, Layers, Activity, ChevronLeft
 } from 'lucide-react';
@@ -225,6 +225,22 @@ const ResearchPage = () => {
     if (canGoToStep(stepNum)) {
       setCurrentStep(stepNum);
     }
+  };
+
+  // Форматування часу тренування з перекладом
+  const formatTrainingTime = (timeStr) => {
+    if (!timeStr) return timeStr;
+    
+    // Парсимо "0 хв 2 сек" або "1 хв 30 сек"
+    const match = timeStr.match(/(\d+)\s*хв\s*(\d+)\s*сек/);
+    
+    if (match) {
+      const minutes = match[1];
+      const seconds = match[2];
+      return `${minutes} ${t('research.timeMinShort')} ${seconds} ${t('research.timeSecShort')}`;
+    }
+    
+    return timeStr;
   };
 
   return (
@@ -853,7 +869,7 @@ const ResearchPage = () => {
                     {t('research.resultsTrainTime')}
                   </div>
                   <div className="text-xl font-bold text-green-600">
-                    {results.trainingTime}
+                    {formatTrainingTime(results.trainingTime)}
                   </div>
                 </div>
                 <div className="bg-blue-50 rounded-lg p-4">

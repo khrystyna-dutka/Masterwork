@@ -4,10 +4,11 @@ import React, { useState } from 'react';
 import { getAQIStatus } from '../utils/helpers';
 import lvivDistrictsGeoJSON from '../data/lvivDistricts.json';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedDistrictName } from '../utils/districts';
 
 const InteractiveMap = ({ districts, onDistrictClick, displayMode = 'baseAQI' }) => {
   const [hoveredId, setHoveredId] = useState(null);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Аналіз районів для виявлення аномалій
   const analyzeDistricts = (districts) => {
@@ -93,12 +94,17 @@ const InteractiveMap = ({ districts, onDistrictClick, displayMode = 'baseAQI' })
     return Number(value).toFixed(2);
   };
 
-  // Отримати статус на основі вибраного параметра (з перекладом)
-  const getParameterStatus = (value) => {
-    // Для AQI використовуємо стандартну функцію
-    if (displayMode === 'baseAQI') {
-      return getAQIStatus(value);
-    }
+// Отримати статус на основі вибраного параметра (з перекладом)
+const getParameterStatus = (value) => {
+  // Для AQI теж використовуємо переклади
+  if (displayMode === 'baseAQI') {
+    if (value <= 50)  return { color: '#10b981', text: t('aqi.status.good'),                 textColor: 'text-green-600' };
+    if (value <= 100) return { color: '#f59e0b', text: t('aqi.status.moderate'),            textColor: 'text-yellow-600' };
+    if (value <= 150) return { color: '#f97316', text: t('aqi.status.unhealthy_sensitive'), textColor: 'text-orange-600' };
+    if (value <= 200) return { color: '#ef4444', text: t('aqi.status.unhealthy'),          textColor: 'text-red-600' };
+    if (value <= 300) return { color: '#9333ea', text: t('aqi.status.very_unhealthy'),     textColor: 'text-purple-600' };
+    return { color: '#7f1d1d', text: t('aqi.status.hazardous'),                            textColor: 'text-red-900' };
+  }
     
     // Для PM2.5
     if (displayMode === 'pm25') {
@@ -280,7 +286,7 @@ const InteractiveMap = ({ districts, onDistrictClick, displayMode = 'baseAQI' })
                   fill="white"
                   y="5"
                 >
-                  {districtData.name}
+                  {getLocalizedDistrictName(districtData, i18n)}
                 </text>
 
                 {/* Значення параметра */}
@@ -357,7 +363,9 @@ const InteractiveMap = ({ districts, onDistrictClick, displayMode = 'baseAQI' })
 
             return (
               <>
-                <h3 className="font-bold text-lg text-gray-800 mb-2">{district.name}</h3>
+                <h3 className="font-bold text-lg text-gray-800 mb-2">
+                  {getLocalizedDistrictName(district, i18n)}
+                </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">

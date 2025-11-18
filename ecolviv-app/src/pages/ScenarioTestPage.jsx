@@ -2,16 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Area, AreaChart, ReferenceLine
 } from 'recharts';
 import {
   Flame, Factory, Cloud, Wind, CheckCircle, Play, AlertTriangle,
-  TrendingUp, TrendingDown, Clock, Target, ArrowDown, ArrowUp, Settings
+  Clock, Target, ArrowDown, ArrowUp, Settings
 } from 'lucide-react';
 import scenarioTestService from '../services/scenarioTestService';
 import { districts } from '../data/districts';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedDistrictName } from '../utils/districts';
 
 // Компонент форми для власного сценарію
 const CustomScenarioForm = ({ onSubmit, loading }) => {
@@ -158,11 +159,10 @@ const CustomScenarioForm = ({ onSubmit, loading }) => {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
-            loading
+          className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${loading
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg'
-          }`}
+            }`}
         >
           {loading ? (
             <>
@@ -189,7 +189,7 @@ const CustomScenarioForm = ({ onSubmit, loading }) => {
 
 // Головний компонент
 const ScenarioTestPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [selectedDistrict, setSelectedDistrict] = useState(1);
   const [scenarios, setScenarios] = useState([]);
@@ -257,7 +257,7 @@ const ScenarioTestPage = () => {
         selectedScenario.id,
         customValues
       );
-      
+
       setTestResults(result);
     } catch (error) {
       console.error('❌ Помилка:', error);
@@ -315,7 +315,7 @@ const ScenarioTestPage = () => {
           >
             {districts.map(district => (
               <option key={district.id} value={district.id}>
-                {district.name}
+                {getLocalizedDistrictName(district, i18n)}
               </option>
             ))}
           </select>
@@ -332,24 +332,21 @@ const ScenarioTestPage = () => {
                 <div
                   key={scenario.id}
                   onClick={() => setSelectedScenario(scenario)}
-                  className={`bg-white rounded-xl shadow-md p-6 cursor-pointer transition-all hover:shadow-lg ${
-                    isSelected ? 'ring-2 ring-orange-500 shadow-orange-200' : ''
-                  }`}
+                  className={`bg-white rounded-xl shadow-md p-6 cursor-pointer transition-all hover:shadow-lg ${isSelected ? 'ring-2 ring-orange-500 shadow-orange-200' : ''
+                    }`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-lg ${
-                      isSelected ? 'bg-orange-100' : 'bg-gray-100'
-                    }`}>
-                      <IconComponent className={`w-8 h-8 ${
-                        isSelected ? 'text-orange-600' : 'text-gray-600'
-                      }`} />
+                    <div className={`p-3 rounded-lg ${isSelected ? 'bg-orange-100' : 'bg-gray-100'
+                      }`}>
+                      <IconComponent className={`w-8 h-8 ${isSelected ? 'text-orange-600' : 'text-gray-600'
+                        }`} />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-gray-800 mb-1">
-                        {scenario.name}
+                        {t(`scenarioTest.presets.${scenario.id}.name`)}
                       </h3>
                       <p className="text-sm text-gray-600 mb-3">
-                        {scenario.description}
+                        {t(`scenarioTest.presets.${scenario.id}.description`)}
                       </p>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
@@ -380,17 +377,14 @@ const ScenarioTestPage = () => {
                 icon: '⚙️',
                 values: {}
               })}
-              className={`bg-white rounded-xl shadow-md p-6 cursor-pointer transition-all hover:shadow-lg ${
-                selectedScenario?.id === 'custom' ? 'ring-2 ring-purple-500 shadow-purple-200' : ''
-              }`}
+              className={`bg-white rounded-xl shadow-md p-6 cursor-pointer transition-all hover:shadow-lg ${selectedScenario?.id === 'custom' ? 'ring-2 ring-purple-500 shadow-purple-200' : ''
+                }`}
             >
               <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-lg ${
-                  selectedScenario?.id === 'custom' ? 'bg-purple-100' : 'bg-gray-100'
-                }`}>
-                  <Settings className={`w-8 h-8 ${
-                    selectedScenario?.id === 'custom' ? 'text-purple-600' : 'text-gray-600'
-                  }`} />
+                <div className={`p-3 rounded-lg ${selectedScenario?.id === 'custom' ? 'bg-purple-100' : 'bg-gray-100'
+                  }`}>
+                  <Settings className={`w-8 h-8 ${selectedScenario?.id === 'custom' ? 'text-purple-600' : 'text-gray-600'
+                    }`} />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-gray-800 mb-1">
@@ -410,7 +404,7 @@ const ScenarioTestPage = () => {
 
         {/* Форма власного сценарію */}
         {selectedScenario?.id === 'custom' && (
-          <CustomScenarioForm 
+          <CustomScenarioForm
             onSubmit={(values) => handleRunTest(values)}
             loading={loading}
           />
@@ -421,11 +415,10 @@ const ScenarioTestPage = () => {
           <button
             onClick={() => handleRunTest()}
             disabled={loading}
-            className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-lg transition-all mb-6 ${
-              loading
+            className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold text-lg transition-all mb-6 ${loading
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:shadow-xl hover:scale-105'
-            }`}
+              }`}
           >
             {loading ? (
               <>
@@ -494,9 +487,8 @@ const ScenarioTestPage = () => {
                           <h3 className="font-bold text-gray-800">{parameterInfo[param].label}</h3>
                           <p className="text-xs text-gray-500">{parameterInfo[param].unit}</p>
                         </div>
-                        <div className={`px-2 py-1 rounded text-xs font-semibold ${
-                          getStatusColor(details.final_status)
-                        }`}>
+                        <div className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(details.final_status)
+                          }`}>
                           {getStatusLabel(details.final_status)}
                         </div>
                       </div>
@@ -518,9 +510,8 @@ const ScenarioTestPage = () => {
                           <span className="text-sm text-gray-600">
                             {t('scenarioTest.paramChange')}
                           </span>
-                          <span className={`font-bold flex items-center gap-1 ${
-                            details.percent_change < 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
+                          <span className={`font-bold flex items-center gap-1 ${details.percent_change < 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
                             {details.percent_change < 0 ? (
                               <ArrowDown className="w-4 h-4" />
                             ) : (
@@ -569,11 +560,10 @@ const ScenarioTestPage = () => {
               </div>
 
               {/* Загальний висновок */}
-              <div className={`mt-6 p-4 rounded-lg border-2 ${
-                testResults.analysis.all_parameters_safe
+              <div className={`mt-6 p-4 rounded-lg border-2 ${testResults.analysis.all_parameters_safe
                   ? 'bg-green-50 border-green-300'
                   : 'bg-orange-50 border-orange-300'
-              }`}>
+                }`}>
                 {testResults.analysis.all_parameters_safe ? (
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />

@@ -6,10 +6,11 @@ import './MonitoringPage.css';
 import AQITimeline from '../components/AQITimeline';
 import { Wrench } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedDistrictName } from '../utils/districts';
 
 // 🔧 Додай setCurrentPage в пропси
 const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict, setCurrentPage }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const getAQIColor = (aqi) => {
     if (aqi <= 50) return '#10b981';
@@ -70,7 +71,7 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict, setC
                   style={{ borderLeftColor: color }}
                 >
                   <div className="district-card-header">
-                    <h3>{district.name}</h3>
+                    <h3>{getLocalizedDistrictName(district, i18n)}</h3>
                     <div
                       className="aqi-badge"
                       style={{ backgroundColor: color }}
@@ -119,7 +120,7 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict, setC
             <AirQualityDetails district={selectedDistrict} />
             <AirQualityChart
               districtId={selectedDistrict.id}
-              districtName={selectedDistrict.name}
+              districtName={getLocalizedDistrictName(selectedDistrict, i18n)}
             />
           </div>
         )}

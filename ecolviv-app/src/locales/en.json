@@ -342,7 +342,10 @@
     "btnExportJson": "Save JSON config",
     "btnChangeSettings": "Change settings",
     "btnUploadAnother": "Upload another dataset",
-    "btnNewResearch": "New research"
+    "btnNewResearch": "New research",
+
+    "timeMinShort": "min",
+    "timeSecShort": "sec"
   },
 
   "scenario": {
@@ -396,14 +399,20 @@
     "safeLabel": "Safe",
     "aboveNormLabel": "Above the norm",
 
-    "aqiStatus": {
-      "Good": "Good",
-      "Moderate": "Moderate",
-      "Unhealthy_for_Sensitive_Groups": "Unhealthy for sensitive groups",
-      "Unhealthy": "Unhealthy",
-      "Very_Unhealthy": "Very unhealthy",
-      "Hazardous": "Hazardous"
-    },
+  "aqiStatus": {
+    "Добра": "Good",
+    "Good": "Good",
+    "Помірна": "Moderate",
+    "Moderate": "Moderate",
+    "Нездорова_для_чутливих_груп": "Unhealthy for Sensitive Groups",
+    "Unhealthy_for_Sensitive_Groups": "Unhealthy for Sensitive Groups",
+    "Нездорова": "Unhealthy",
+    "Unhealthy": "Unhealthy",
+    "Дуже_нездорова": "Very Unhealthy",
+    "Very_Unhealthy": "Very Unhealthy",
+    "Небезпечна": "Hazardous",
+    "Hazardous": "Hazardous"
+  },
     "aqiChangeImproved": "↓ Improvement",
     "aqiChangeWorsened": "↑ Deterioration",
 
@@ -436,86 +445,6 @@
 
     "errorSimulation": "Error while simulating scenario",
     "customScenarioName": "Custom scenario"
-  },
-
-  "scenarioTest": {
-    "customForm": {
-      "title": "Custom scenario settings",
-      "pollutionTitle": "Pollution parameters:",
-      "advancedToggle": "Additional parameters (weather)",
-      "runButton": "Run test with custom parameters",
-      "hint": "💡 Set extreme values to test the recovery forecast"
-    },
-
-    "common": {
-      "testing": "Testing..."
-    },
-
-    "title": "Scenario testing",
-    "subtitle": "Checking the ML model reaction to extreme conditions and recovery time",
-
-    "districtLabel": "District for testing",
-
-    "errorLoadScenarios": "Error loading scenarios",
-    "errorRunTest": "Error during testing",
-    "hourSuffix": "h",
-
-    "presets": {
-      "customName": "Custom scenario",
-      "customDescription": "Set your own pollution values",
-      "customCta": "Adjust all parameters →"
-    },
-
-    "runPresetButton": "Run scenario test",
-    "runPresetButtonLoading": "Testing...",
-
-    "loadingBox": {
-      "title": "Simulating an extreme scenario...",
-      "subtitle": "The model analyzes the situation and forecasts the next 12 hours"
-    },
-
-    "initialConditionsTitle": "Initial conditions: {{scenarioName}}",
-
-    "analysisTitle": "Recovery analysis by parameters",
-
-    "status": {
-      "safe": "Safe",
-      "moderate": "Moderate",
-      "high": "Elevated",
-      "critical": "Critical"
-    },
-
-    "paramStart": "Start:",
-    "paramAfterHours": "After {{hours}} h:",
-    "paramChange": "Change:",
-
-    "safeInHours": "Safe in {{hours}} h",
-    "moderateInHours": "Moderate in {{hours}} h",
-    "notReachSafe": "Will not reach a safe level",
-
-    "summary": {
-      "fullRecoveryTitle": "✅ Full recovery in {{hours}} hours",
-      "fullRecoveryText": "All parameters will reach a safe level. The slowest to recover: {{paramLabel}}",
-      "partialTitle": "⚠️ Partial recovery",
-      "partialText": "Not all parameters will reach a safe level within 12 hours. It is recommended to stay indoors and use protection."
-    },
-
-    "chartParamLabel": "Parameter for detailed view",
-
-    "chartTitle": "Dynamics: {{paramLabel}} with safety zones",
-
-    "safeLevelShort": "Safe",
-    "moderateLevelShort": "Moderate",
-    "criticalLevelShort": "Critical",
-
-    "legend": {
-      "safe": "Safe: < {{value}}",
-      "moderate": "Moderate: {{safe}}–{{moderate}}",
-      "critical": "Critical: > {{value}}"
-    },
-
-    "emptyTitle": "Select a scenario and start the test",
-    "emptySubtitle": "The model will forecast how air quality changes in extreme conditions and when each parameter will reach a safe level"
   },
 
   "airQualityChart": {
@@ -749,7 +678,100 @@
     },
     "detailsHint": "Click for detailed information",
     "unit": "μg/m³"
+  },
+
+"scenarioTest": {
+  "title": "Scenario testing",
+  "subtitle": "Checking the ML model reaction to extreme conditions and recovery time",
+  "districtLabel": "District for testing",
+  "errorLoadScenarios": "Error loading scenarios",
+  "errorRunTest": "Error during testing",
+  "hourSuffix": "h",
+  "runPresetButton": "Run scenario test",
+  "runPresetButtonLoading": "Testing...",
+  "emptyTitle": "Select a scenario and start the test",
+  "emptySubtitle": "The model will forecast how air quality changes in extreme conditions and when each parameter will reach a safe level",
+  "chartParamLabel": "Parameter to display:",
+  "chartTitle": "Recovery forecast: {{paramLabel}}",
+  "safeLevelShort": "Safe",
+  "moderateLevelShort": "Moderate",
+  "criticalLevelShort": "Critical",
+  "legend": {
+    "safe": "≤ {{value}} (safe)",
+    "moderate": "{{safe}}-{{moderate}} (moderate)",
+    "critical": "> {{value}} (critical)"
+  },
+  "customForm": {
+    "title": "Custom scenario settings",
+    "pollutionTitle": "Pollution parameters:",
+    "advancedToggle": "Additional parameters (weather)",
+    "runButton": "Run test with custom parameters",
+    "hint": "💡 Set extreme values to test the recovery forecast"
+  },
+  "common": {
+    "testing": "Testing..."
+  },
+  "presets": {
+    "customName": "Custom scenario",
+    "customDescription": "Set your own pollution values",
+    "customCta": "Adjust all parameters →",
+    "fire": {
+      "name": "Forest fire",
+      "description": "PM2.5/PM10 10 times above normal"
+    },
+    "industrial_accident": {
+      "name": "Industrial emission",
+      "description": "NO₂, SO₂, CO 8 times above normal"
+    },
+    "heavy_fog": {
+      "name": "Dense fog",
+      "description": "Humidity 95%, visibility <100m"
+    },
+    "strong_wind": {
+      "name": "Strong wind",
+      "description": "Wind speed 20+ m/s"
+    },
+    "normal": {
+      "name": "Normal conditions",
+      "description": "All parameters within normal range"
+    }
+  },
+  "loadingBox": {
+    "title": "Simulating an extreme scenario...",
+    "subtitle": "The model analyzes the situation and forecasts the next 12 hours"
+  },
+  "initialConditionsTitle": "Initial conditions: {{scenarioName}}",
+  "analysisTitle": "Recovery analysis by parameters",
+  "status": {
+    "safe": "Safe",
+    "moderate": "Moderate",
+    "high": "Elevated",
+    "critical": "Critical"
+  },
+  "paramStart": "Start:",
+  "paramAfterHours": "After {{hours}} h:",
+  "paramChange": "Change:",
+  "safeInHours": "Safe in {{hours}} h",
+  "moderateInHours": "Moderate in {{hours}} h",
+  "notReachSafe": "Will not reach a safe level",
+  "summary": {
+    "fullRecoveryTitle": "✅ Full recovery in {{hours}} hours",
+    "fullRecoveryText": "All parameters will reach a safe level. The slowest to recover: {{paramLabel}}",
+    "partialTitle": "⚠️ Partial recovery",
+    "partialText": "Not all parameters will reach a safe level within 12 hours. It is recommended to stay indoors and use protection.",
+    "stableTitle": "🆗 Stable situation",
+    "stableText": "Parameters will remain at current level. Monitor changes.",
+    "worseningTitle": "🚨 Situation worsening",
+    "worseningText": "Air quality deterioration forecast. Take protective measures immediately!"
   }
+},
+
+"common": {
+  "temperature": "Temperature",
+  "humidity": "Humidity",
+  "pressure": "Pressure",
+  "windSpeed": "Wind speed"
+}
 
 
 

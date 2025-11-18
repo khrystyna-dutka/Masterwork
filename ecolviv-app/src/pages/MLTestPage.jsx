@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import mlTestService from '../services/mlTestService';
 import { districts } from '../data/districts';
+import { getLocalizedDistrictName } from '../utils/districts';
 import { useTranslation } from 'react-i18next';
 
 const MLTestPage = () => {
@@ -27,13 +28,13 @@ const MLTestPage = () => {
   const [loadingInfo, setLoadingInfo] = useState(true);
 
   const parameters = [
-    { key: 'aqi',  label: t('mlTest.parameterAQI'), unit: '' },
+    { key: 'aqi', label: t('mlTest.parameterAQI'), unit: '' },
     { key: 'pm25', label: 'PM2.5', unit: 'μg/m³' },
-    { key: 'pm10', label: 'PM10',  unit: 'μg/m³' },
-    { key: 'no2',  label: 'NO₂',   unit: 'μg/m³' },
-    { key: 'so2',  label: 'SO₂',   unit: 'μg/m³' },
-    { key: 'co',   label: 'CO',    unit: 'μg/m³' },
-    { key: 'o3',   label: 'O₃',    unit: 'μg/m³' }
+    { key: 'pm10', label: 'PM10', unit: 'μg/m³' },
+    { key: 'no2', label: 'NO₂', unit: 'μg/m³' },
+    { key: 'so2', label: 'SO₂', unit: 'μg/m³' },
+    { key: 'co', label: 'CO', unit: 'μg/m³' },
+    { key: 'o3', label: 'O₃', unit: 'μg/m³' }
   ];
 
   // Завантажити інформацію про дані при зміні району
@@ -66,8 +67,7 @@ const MLTestPage = () => {
     } catch (error) {
       console.error('❌', t('mlTest.errorTestConsole'), error);
       alert(
-        `${t('mlTest.errorTestAlert')}: ${
-          error.response?.data?.error || error.message
+        `${t('mlTest.errorTestAlert')}: ${error.response?.data?.error || error.message
         }`
       );
     } finally {
@@ -176,7 +176,7 @@ const MLTestPage = () => {
               >
                 {districts.map(district => (
                   <option key={district.id} value={district.id}>
-                    {district.name}
+                    {getLocalizedDistrictName(district, i18n)}
                   </option>
                 ))}
               </select>
@@ -242,7 +242,7 @@ const MLTestPage = () => {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-blue-900 mb-1">
                     {t('mlTest.dataInfoTitle')}{' '}
-                    {districts.find(d => d.id === selectedDistrict)?.name}
+                    {getLocalizedDistrictName(districts.find(d => d.id === selectedDistrict), i18n)}
                   </p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-blue-700">
                     <div>
@@ -263,8 +263,8 @@ const MLTestPage = () => {
                       </span>{' '}
                       {dataInfo.first_date
                         ? new Date(dataInfo.first_date).toLocaleDateString(
-                            i18n.language === 'en' ? 'en-GB' : 'uk-UA'
-                          )
+                          i18n.language === 'en' ? 'en-GB' : 'uk-UA'
+                        )
                         : '-'}
                     </div>
                     <div>
@@ -273,8 +273,8 @@ const MLTestPage = () => {
                       </span>{' '}
                       {dataInfo.last_date
                         ? new Date(dataInfo.last_date).toLocaleDateString(
-                            i18n.language === 'en' ? 'en-GB' : 'uk-UA'
-                          )
+                          i18n.language === 'en' ? 'en-GB' : 'uk-UA'
+                        )
                         : '-'}
                     </div>
                   </div>

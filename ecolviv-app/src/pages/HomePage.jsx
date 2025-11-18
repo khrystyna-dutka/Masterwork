@@ -1,12 +1,22 @@
 // src/pages/HomePage.jsx
 
 import React from 'react';
-import { Wind, MapPin, TrendingUp, AlertCircle, Navigation, BarChart3, LogIn, User } from 'lucide-react';
-import { getAQIStatus } from '../utils/helpers';
+import { Wind, MapPin, TrendingUp, AlertCircle, Navigation, BarChart3 } from 'lucide-react';
+import { getLocalizedDistrictName } from '../utils/districts';
 import { useTranslation } from 'react-i18next';
 
 const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // Функція для отримання статусу AQI з перекладом
+  const getAQIStatusTranslated = (aqi) => {
+    if (aqi <= 50)  return { color: '#10b981', text: t('aqi.status.good'),                 textColor: 'text-green-600' };
+    if (aqi <= 100) return { color: '#f59e0b', text: t('aqi.status.moderate'),            textColor: 'text-yellow-600' };
+    if (aqi <= 150) return { color: '#f97316', text: t('aqi.status.unhealthy_sensitive'), textColor: 'text-orange-600' };
+    if (aqi <= 200) return { color: '#ef4444', text: t('aqi.status.unhealthy'),          textColor: 'text-red-600' };
+    if (aqi <= 300) return { color: '#9333ea', text: t('aqi.status.very_unhealthy'),     textColor: 'text-purple-600' };
+    return { color: '#7f1d1d', text: t('aqi.status.hazardous'),                          textColor: 'text-red-900' };
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-50">
@@ -79,7 +89,7 @@ const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {districts.map(district => {
-              const status = getAQIStatus(district.baseAQI);
+              const status = getAQIStatusTranslated(district.baseAQI);
               return (
                 <div
                   key={district.id}
@@ -92,7 +102,9 @@ const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }
                   <div className="text-3xl font-bold mb-1" style={{ color: status.color }}>
                     {district.baseAQI}
                   </div>
-                  <div className="text-sm font-semibold text-gray-700">{district.name}</div>
+                  <div className="text-sm font-semibold text-gray-700">
+                    {getLocalizedDistrictName(district, i18n)}
+                  </div>
                   <div className="text-xs text-gray-500">{status.text}</div>
                 </div>
               );
