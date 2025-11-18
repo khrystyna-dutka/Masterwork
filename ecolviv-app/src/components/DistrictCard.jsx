@@ -3,9 +3,14 @@
 import React from 'react';
 import { Car, Trees } from 'lucide-react';
 import { getAQIStatus, formatPopulation } from '../utils/helpers';
+import { useTranslation } from 'react-i18next';
+import { getLocalizedDistrictName } from '../utils/districts';
 
 const DistrictCard = ({ district, onClick, isSelected = false }) => {
   const status = getAQIStatus(district.baseAQI);
+  const { i18n } = useTranslation();
+
+  const displayName = getLocalizedDistrictName(district, i18n);
 
   return (
     <div
@@ -16,8 +21,10 @@ const DistrictCard = ({ district, onClick, isSelected = false }) => {
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h3 className="font-bold text-xl text-gray-800 mb-1">{district.name}</h3>
-          <p className="text-sm text-gray-500">Населення: {formatPopulation(district.population)}</p>
+          <h3 className="font-bold text-xl text-gray-800 mb-1">{displayName}</h3>
+          <p className="text-sm text-gray-500">
+            Населення: {formatPopulation(district.population)}
+          </p>
         </div>
         <div className="text-right">
           <div 

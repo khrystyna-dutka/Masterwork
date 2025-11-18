@@ -11,9 +11,12 @@ import {
 } from 'lucide-react';
 import scenarioTestService from '../services/scenarioTestService';
 import { districts } from '../data/districts';
+import { useTranslation } from 'react-i18next';
 
 // Компонент форми для власного сценарію
 const CustomScenarioForm = ({ onSubmit, loading }) => {
+  const { t } = useTranslation();
+
   const [values, setValues] = useState({
     pm25: 50,
     pm10: 80,
@@ -40,10 +43,10 @@ const CustomScenarioForm = ({ onSubmit, loading }) => {
   ];
 
   const weatherConfig = [
-    { key: 'temperature', label: 'Температура', unit: '°C', min: -20, max: 40, step: 1 },
-    { key: 'humidity', label: 'Вологість', unit: '%', min: 0, max: 100, step: 5 },
-    { key: 'pressure', label: 'Тиск', unit: 'hPa', min: 980, max: 1040, step: 1 },
-    { key: 'wind_speed', label: 'Швидкість вітру', unit: 'm/s', min: 0, max: 30, step: 0.5 }
+    { key: 'temperature', label: t('common.temperature', 'Температура'), unit: '°C', min: -20, max: 40, step: 1 },
+    { key: 'humidity', label: t('common.humidity', 'Вологість'), unit: '%', min: 0, max: 100, step: 5 },
+    { key: 'pressure', label: t('common.pressure', 'Тиск'), unit: 'hPa', min: 980, max: 1040, step: 1 },
+    { key: 'wind_speed', label: t('common.windSpeed', 'Швидкість вітру'), unit: 'm/s', min: 0, max: 30, step: 0.5 }
   ];
 
   const handleChange = (key, value) => {
@@ -71,13 +74,15 @@ const CustomScenarioForm = ({ onSubmit, loading }) => {
     <div className="bg-white rounded-xl shadow-md p-6 mb-6 border-2 border-purple-300">
       <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
         <Settings className="w-6 h-6 text-purple-600" />
-        Налаштування власного сценарію
+        {t('scenarioTest.customForm.title')}
       </h3>
 
       <form onSubmit={handleSubmit}>
         {/* Основні параметри */}
         <div className="mb-6">
-          <h4 className="font-semibold text-gray-700 mb-4">Параметри забруднення:</h4>
+          <h4 className="font-semibold text-gray-700 mb-4">
+            {t('scenarioTest.customForm.pollutionTitle')}
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {parameterConfig.map(param => (
               <div key={param.key} className="space-y-2">
@@ -115,7 +120,7 @@ const CustomScenarioForm = ({ onSubmit, loading }) => {
             onClick={() => setShowAdvanced(!showAdvanced)}
             className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 font-medium mb-4"
           >
-            {showAdvanced ? '▼' : '▶'} Додаткові параметри (метео)
+            {showAdvanced ? '▼' : '▶'} {t('scenarioTest.customForm.advancedToggle')}
           </button>
 
           {showAdvanced && (
@@ -162,12 +167,12 @@ const CustomScenarioForm = ({ onSubmit, loading }) => {
           {loading ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              Тестування...
+              {t('scenarioTest.common.testing')}
             </>
           ) : (
             <>
               <Play className="w-5 h-5" />
-              Запустити тест з власними параметрами
+              {t('scenarioTest.customForm.runButton')}
             </>
           )}
         </button>
@@ -175,7 +180,7 @@ const CustomScenarioForm = ({ onSubmit, loading }) => {
 
       <div className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
         <p className="text-xs text-purple-800">
-          💡 Встановіть екстремальні значення, щоб перевірити прогноз відновлення
+          {t('scenarioTest.customForm.hint')}
         </p>
       </div>
     </div>
@@ -184,6 +189,8 @@ const CustomScenarioForm = ({ onSubmit, loading }) => {
 
 // Головний компонент
 const ScenarioTestPage = () => {
+  const { t } = useTranslation();
+
   const [selectedDistrict, setSelectedDistrict] = useState(1);
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenario, setSelectedScenario] = useState(null);
@@ -211,6 +218,7 @@ const ScenarioTestPage = () => {
 
   useEffect(() => {
     loadScenarios();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadScenarios = async () => {
@@ -225,7 +233,7 @@ const ScenarioTestPage = () => {
       }
     } catch (error) {
       console.error('Error loading scenarios:', error);
-      alert('Помилка завантаження сценаріїв');
+      alert(t('scenarioTest.errorLoadScenarios'));
     } finally {
       setLoadingScenarios(false);
     }
@@ -253,14 +261,14 @@ const ScenarioTestPage = () => {
       setTestResults(result);
     } catch (error) {
       console.error('❌ Помилка:', error);
-      alert('Помилка тестування: ' + (error.response?.data?.error || error.message));
+      alert(t('scenarioTest.errorRunTest') + ': ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
   };
 
   const chartData = testResults?.forecasts?.map(item => ({
-    hour: `+${item.hour}г`,
+    hour: `+${item.hour}${t('scenarioTest.hourSuffix')}`,
     value: item[selectedParameter],
     hourNum: item.hour
   })) || [];
@@ -275,10 +283,10 @@ const ScenarioTestPage = () => {
   };
 
   const getStatusLabel = (status) => {
-    if (status === 'safe') return 'Безпечно';
-    if (status === 'moderate') return 'Помірно';
-    if (status === 'high') return 'Підвищено';
-    return 'Критично';
+    if (status === 'safe') return t('scenarioTest.status.safe');
+    if (status === 'moderate') return t('scenarioTest.status.moderate');
+    if (status === 'high') return t('scenarioTest.status.high');
+    return t('scenarioTest.status.critical');
   };
 
   return (
@@ -288,17 +296,17 @@ const ScenarioTestPage = () => {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center gap-3">
             <Flame className="w-10 h-10 text-orange-600" />
-            Сценарне тестування
+            {t('scenarioTest.title')}
           </h1>
           <p className="text-gray-600">
-            Перевірка реакції ML моделі на екстремальні умови та час відновлення
+            {t('scenarioTest.subtitle')}
           </p>
         </div>
 
         {/* Вибір району */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Район для тестування
+            {t('scenarioTest.districtLabel')}
           </label>
           <select
             value={selectedDistrict}
@@ -367,8 +375,8 @@ const ScenarioTestPage = () => {
             <div
               onClick={() => setSelectedScenario({
                 id: 'custom',
-                name: 'Власний сценарій',
-                description: 'Задайте власні значення забруднення',
+                name: t('scenarioTest.presets.customName'),
+                description: t('scenarioTest.presets.customDescription'),
                 icon: '⚙️',
                 values: {}
               })}
@@ -386,13 +394,13 @@ const ScenarioTestPage = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-gray-800 mb-1">
-                    Власний сценарій
+                    {t('scenarioTest.presets.customName')}
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
-                    Задайте власні значення забруднення
+                    {t('scenarioTest.presets.customDescription')}
                   </p>
                   <div className="text-xs text-purple-600 font-semibold">
-                    Налаштуйте всі параметри →
+                    {t('scenarioTest.presets.customCta')}
                   </div>
                 </div>
               </div>
@@ -422,12 +430,12 @@ const ScenarioTestPage = () => {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                Тестування...
+                {t('scenarioTest.runPresetButtonLoading')}
               </>
             ) : (
               <>
                 <Play className="w-6 h-6" />
-                Запустити тест сценарію
+                {t('scenarioTest.runPresetButton')}
               </>
             )}
           </button>
@@ -437,9 +445,11 @@ const ScenarioTestPage = () => {
         {loading && (
           <div className="bg-white rounded-xl shadow-md p-12 text-center mb-6">
             <Flame className="w-16 h-16 text-orange-600 mx-auto mb-4 animate-pulse" />
-            <p className="text-gray-600 mb-2">Симуляція екстремального сценарію...</p>
+            <p className="text-gray-600 mb-2">
+              {t('scenarioTest.loadingBox.title')}
+            </p>
             <p className="text-sm text-gray-500">
-              Модель аналізує ситуацію та прогнозує наступні 12 годин
+              {t('scenarioTest.loadingBox.subtitle')}
             </p>
           </div>
         )}
@@ -451,7 +461,9 @@ const ScenarioTestPage = () => {
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <AlertTriangle className="w-6 h-6 text-orange-600" />
-                Початкові умови: {selectedScenario?.name}
+                {t('scenarioTest.initialConditionsTitle', {
+                  scenarioName: selectedScenario?.name
+                })}
               </h2>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -470,7 +482,7 @@ const ScenarioTestPage = () => {
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Target className="w-6 h-6 text-blue-600" />
-                Аналіз відновлення по параметрах
+                {t('scenarioTest.analysisTitle')}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -491,15 +503,21 @@ const ScenarioTestPage = () => {
 
                       <div className="space-y-2 mb-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Початок:</span>
+                          <span className="text-sm text-gray-600">
+                            {t('scenarioTest.paramStart')}
+                          </span>
                           <span className="font-bold text-gray-800">{details.initial_value}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Через 12 год:</span>
+                          <span className="text-sm text-gray-600">
+                            {t('scenarioTest.paramAfterHours', { hours: 12 })}
+                          </span>
                           <span className="font-bold text-gray-800">{details.final_value}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Зміна:</span>
+                          <span className="text-sm text-gray-600">
+                            {t('scenarioTest.paramChange')}
+                          </span>
                           <span className={`font-bold flex items-center gap-1 ${
                             details.percent_change < 0 ? 'text-green-600' : 'text-red-600'
                           }`}>
@@ -517,7 +535,11 @@ const ScenarioTestPage = () => {
                         <div className="bg-green-50 border border-green-200 rounded p-2">
                           <div className="flex items-center gap-2 text-sm text-green-800">
                             <Clock className="w-4 h-4" />
-                            <span>Безпечно через {details.time_to_safe} год</span>
+                            <span>
+                              {t('scenarioTest.safeInHours', {
+                                hours: details.time_to_safe
+                              })}
+                            </span>
                           </div>
                         </div>
                       )}
@@ -526,7 +548,11 @@ const ScenarioTestPage = () => {
                         <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
                           <div className="flex items-center gap-2 text-sm text-yellow-800">
                             <Clock className="w-4 h-4" />
-                            <span>Помірно через {details.time_to_moderate} год</span>
+                            <span>
+                              {t('scenarioTest.moderateInHours', {
+                                hours: details.time_to_moderate
+                              })}
+                            </span>
                           </div>
                         </div>
                       )}
@@ -534,7 +560,7 @@ const ScenarioTestPage = () => {
                       {!details.will_be_safe && !details.will_be_moderate && (
                         <div className="bg-red-50 border border-red-200 rounded p-2">
                           <p className="text-xs text-red-800">
-                            Не досягне безпечного рівня
+                            {t('scenarioTest.notReachSafe')}
                           </p>
                         </div>
                       )}
@@ -553,11 +579,14 @@ const ScenarioTestPage = () => {
                     <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />
                     <div>
                       <p className="font-bold text-green-900 mb-1">
-                        ✅ Повне відновлення за {testResults.analysis.slowest_recovery_time} годин
+                        {t('scenarioTest.summary.fullRecoveryTitle', {
+                          hours: testResults.analysis.slowest_recovery_time
+                        })}
                       </p>
                       <p className="text-sm text-green-800">
-                        Всі параметри досягнуть безпечного рівня.
-                        Найповільніше відновлюється: {parameterInfo[testResults.analysis.slowest_recovery]?.label}
+                        {t('scenarioTest.summary.fullRecoveryText', {
+                          paramLabel: parameterInfo[testResults.analysis.slowest_recovery]?.label
+                        })}
                       </p>
                     </div>
                   </div>
@@ -566,11 +595,10 @@ const ScenarioTestPage = () => {
                     <AlertTriangle className="w-6 h-6 text-orange-600 mt-0.5" />
                     <div>
                       <p className="font-bold text-orange-900 mb-1">
-                        ⚠️ Часткове відновлення
+                        {t('scenarioTest.summary.partialTitle')}
                       </p>
                       <p className="text-sm text-orange-800">
-                        Не всі параметри досягнуть безпечного рівня за 12 годин.
-                        Рекомендується залишатися в приміщенні та використовувати захист.
+                        {t('scenarioTest.summary.partialText')}
                       </p>
                     </div>
                   </div>
@@ -581,7 +609,7 @@ const ScenarioTestPage = () => {
             {/* Вибір параметра для графіка */}
             <div className="bg-white rounded-xl shadow-md p-4 mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Параметр для детального перегляду
+                {t('scenarioTest.chartParamLabel')}
               </label>
               <select
                 value={selectedParameter}
@@ -599,7 +627,7 @@ const ScenarioTestPage = () => {
             {/* Графік вибраного параметра з зонами */}
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">
-                Динаміка: {currentParam.label} з зонами безпеки
+                {t('scenarioTest.chartTitle', { paramLabel: currentParam.label })}
               </h2>
 
               <ResponsiveContainer width="100%" height={400}>
@@ -619,19 +647,34 @@ const ScenarioTestPage = () => {
                     y={currentParam.safe}
                     stroke="#10b981"
                     strokeDasharray="3 3"
-                    label={{ value: 'Безпечно', position: 'right', fill: '#10b981', fontSize: 12 }}
+                    label={{
+                      value: t('scenarioTest.safeLevelShort'),
+                      position: 'right',
+                      fill: '#10b981',
+                      fontSize: 12
+                    }}
                   />
                   <ReferenceLine
                     y={currentParam.moderate}
                     stroke="#f59e0b"
                     strokeDasharray="3 3"
-                    label={{ value: 'Помірно', position: 'right', fill: '#f59e0b', fontSize: 12 }}
+                    label={{
+                      value: t('scenarioTest.moderateLevelShort'),
+                      position: 'right',
+                      fill: '#f59e0b',
+                      fontSize: 12
+                    }}
                   />
                   <ReferenceLine
                     y={currentParam.critical}
                     stroke="#ef4444"
                     strokeDasharray="3 3"
-                    label={{ value: 'Критично', position: 'right', fill: '#ef4444', fontSize: 12 }}
+                    label={{
+                      value: t('scenarioTest.criticalLevelShort'),
+                      position: 'right',
+                      fill: '#ef4444',
+                      fontSize: 12
+                    }}
                   />
 
                   <Area
@@ -648,15 +691,24 @@ const ScenarioTestPage = () => {
               <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded"></div>
-                  <span>Безпечно: &lt; {currentParam.safe}</span>
+                  <span>
+                    {t('scenarioTest.legend.safe', { value: currentParam.safe })}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                  <span>Помірно: {currentParam.safe}-{currentParam.moderate}</span>
+                  <span>
+                    {t('scenarioTest.legend.moderate', {
+                      safe: currentParam.safe,
+                      moderate: currentParam.moderate
+                    })}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-red-500 rounded"></div>
-                  <span>Критично: &gt; {currentParam.critical}</span>
+                  <span>
+                    {t('scenarioTest.legend.critical', { value: currentParam.critical })}
+                  </span>
                 </div>
               </div>
             </div>
@@ -668,11 +720,10 @@ const ScenarioTestPage = () => {
           <div className="bg-white rounded-xl shadow-md p-12 text-center">
             <Flame className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              Оберіть сценарій і запустіть тест
+              {t('scenarioTest.emptyTitle')}
             </h3>
             <p className="text-gray-600">
-              Модель спрогнозує як зміниться якість повітря в екстремальних умовах
-              та коли кожен параметр досягне безпечного рівня
+              {t('scenarioTest.emptySubtitle')}
             </p>
           </div>
         )}

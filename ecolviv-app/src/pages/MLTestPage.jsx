@@ -11,8 +11,11 @@ import {
 } from 'lucide-react';
 import mlTestService from '../services/mlTestService';
 import { districts } from '../data/districts';
+import { useTranslation } from 'react-i18next';
 
 const MLTestPage = () => {
+  const { t, i18n } = useTranslation();
+
   const [selectedDistrict, setSelectedDistrict] = useState(1);
   const [selectedParameter, setSelectedParameter] = useState('aqi');
   const [days, setDays] = useState(30);
@@ -24,18 +27,19 @@ const MLTestPage = () => {
   const [loadingInfo, setLoadingInfo] = useState(true);
 
   const parameters = [
-    { key: 'aqi', label: 'AQI (Індекс якості повітря)', unit: '' },
+    { key: 'aqi',  label: t('mlTest.parameterAQI'), unit: '' },
     { key: 'pm25', label: 'PM2.5', unit: 'μg/m³' },
-    { key: 'pm10', label: 'PM10', unit: 'μg/m³' },
-    { key: 'no2', label: 'NO₂', unit: 'μg/m³' },
-    { key: 'so2', label: 'SO₂', unit: 'μg/m³' },
-    { key: 'co', label: 'CO', unit: 'μg/m³' },
-    { key: 'o3', label: 'O₃', unit: 'μg/m³' }
+    { key: 'pm10', label: 'PM10',  unit: 'μg/m³' },
+    { key: 'no2',  label: 'NO₂',   unit: 'μg/m³' },
+    { key: 'so2',  label: 'SO₂',   unit: 'μg/m³' },
+    { key: 'co',   label: 'CO',    unit: 'μg/m³' },
+    { key: 'o3',   label: 'O₃',    unit: 'μg/m³' }
   ];
 
   // Завантажити інформацію про дані при зміні району
   useEffect(() => {
     loadDataInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDistrict]);
 
   const loadDataInfo = async () => {
@@ -44,7 +48,7 @@ const MLTestPage = () => {
       const info = await mlTestService.getDataInfo(selectedDistrict);
       setDataInfo(info);
     } catch (error) {
-      console.error('Error loading data info:', error);
+      console.error(t('mlTest.errorLoadInfo'), error);
     } finally {
       setLoadingInfo(false);
     }
@@ -55,28 +59,36 @@ const MLTestPage = () => {
     setTestResults(null);
 
     try {
-      console.log('🧪 Запуск тесту...', { selectedDistrict, days, testSize });
+      console.log('🧪', t('mlTest.consoleStartTest'), { selectedDistrict, days, testSize });
       const results = await mlTestService.runTest(selectedDistrict, days, testSize);
-      console.log('✅ Результати:', results);
+      console.log('✅', t('mlTest.consoleResults'), results);
       setTestResults(results);
     } catch (error) {
-      console.error('❌ Помилка тесту:', error);
-      alert('Помилка тестування: ' + (error.response?.data?.error || error.message));
+      console.error('❌', t('mlTest.errorTestConsole'), error);
+      alert(
+        `${t('mlTest.errorTestAlert')}: ${
+          error.response?.data?.error || error.message
+        }`
+      );
     } finally {
       setLoading(false);
     }
   };
 
   // Підготовка даних для графіка
-  const chartData = testResults?.comparison_data?.map(item => ({
-    time: new Date(item.timestamp).toLocaleString('uk-UA', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit'
-    }),
-    actual: item.actual[selectedParameter],
-    predicted: item.predicted[selectedParameter]
-  })) || [];
+  const chartData =
+    testResults?.comparison_data?.map(item => ({
+      time: new Date(item.timestamp).toLocaleString(
+        i18n.language === 'en' ? 'en-GB' : 'uk-UA',
+        {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit'
+        }
+      ),
+      actual: item.actual[selectedParameter],
+      predicted: item.predicted[selectedParameter]
+    })) || [];
 
   const currentMetrics = testResults?.metrics?.[selectedParameter];
 
@@ -103,33 +115,33 @@ const MLTestPage = () => {
     {
       key: 'mae',
       label: 'MAE',
-      description: 'Середня абсолютна помилка',
-      tooltip: 'Середнє відхилення прогнозу від реальності'
+      description: t('mlTest.metricMaeDescription'),
+      tooltip: t('mlTest.metricMaeTooltip')
     },
     {
       key: 'rmse',
       label: 'RMSE',
-      description: 'Корінь середньоквадратичної помилки',
-      tooltip: 'Показує загальну точність моделі'
+      description: t('mlTest.metricRmseDescription'),
+      tooltip: t('mlTest.metricRmseTooltip')
     },
     {
       key: 'mape',
       label: 'MAPE',
-      description: 'Середня абсолютна % помилка',
-      tooltip: 'Помилка у відсотках',
+      description: t('mlTest.metricMapeDescription'),
+      tooltip: t('mlTest.metricMapeTooltip'),
       suffix: '%'
     },
     {
       key: 'r2',
       label: 'R²',
-      description: 'Коефіцієнт детермінації',
-      tooltip: 'Якість моделі (1.0 = ідеально)'
+      description: t('mlTest.metricR2Description'),
+      tooltip: t('mlTest.metricR2Tooltip')
     },
     {
       key: 'accuracy',
-      label: 'Точність',
-      description: 'Прогнози в межах ±10%',
-      tooltip: 'Відсоток правильних прогнозів',
+      label: t('mlTest.metricAccuracyLabel'),
+      description: t('mlTest.metricAccuracyDescription'),
+      tooltip: t('mlTest.metricAccuracyTooltip'),
       suffix: '%'
     }
   ];
@@ -141,10 +153,10 @@ const MLTestPage = () => {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center gap-3">
             <Target className="w-10 h-10 text-blue-600" />
-            Тестування ML моделі
+            {t('mlTest.title')}
           </h1>
           <p className="text-gray-600">
-            Оцінка точності прогнозування на історичних даних (Train/Test Split)
+            {t('mlTest.subtitle')}
           </p>
         </div>
 
@@ -155,7 +167,7 @@ const MLTestPage = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Database className="w-4 h-4 inline mr-1" />
-                Район
+                {t('mlTest.fieldDistrict')}
               </label>
               <select
                 value={selectedDistrict}
@@ -174,18 +186,18 @@ const MLTestPage = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Calendar className="w-4 h-4 inline mr-1" />
-                Період даних (днів)
+                {t('mlTest.fieldDays')}
               </label>
               <select
                 value={days}
                 onChange={(e) => setDays(parseInt(e.target.value))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value={7}>7 днів</option>
-                <option value={14}>14 днів</option>
-                <option value={21}>21 день</option>
-                <option value={30}>30 днів</option>
-                <option value={60}>60 днів</option>
+                <option value={7}>{t('mlTest.days7')}</option>
+                <option value={14}>{t('mlTest.days14')}</option>
+                <option value={21}>{t('mlTest.days21')}</option>
+                <option value={30}>{t('mlTest.days30')}</option>
+                <option value={60}>{t('mlTest.days60')}</option>
               </select>
             </div>
 
@@ -193,7 +205,7 @@ const MLTestPage = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <TrendingUp className="w-4 h-4 inline mr-1" />
-                Test розмір (%)
+                {t('mlTest.fieldTestSize')}
               </label>
               <select
                 value={testSize}
@@ -209,7 +221,7 @@ const MLTestPage = () => {
             {/* Кнопка запуску */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Дія
+                {t('mlTest.fieldAction')}
               </label>
               <button
                 onClick={handleRunTest}
@@ -217,7 +229,7 @@ const MLTestPage = () => {
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <PlayCircle className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                {loading ? 'Тестування...' : 'Запустити тест'}
+                {loading ? t('mlTest.btnTesting') : t('mlTest.btnRunTest')}
               </button>
             </div>
           </div>
@@ -229,20 +241,41 @@ const MLTestPage = () => {
                 <Info className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-blue-900 mb-1">
-                    Доступні дані для району: {districts.find(d => d.id === selectedDistrict)?.name}
+                    {t('mlTest.dataInfoTitle')}{' '}
+                    {districts.find(d => d.id === selectedDistrict)?.name}
                   </p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-blue-700">
                     <div>
-                      <span className="font-medium">Записів:</span> {dataInfo.total_records}
+                      <span className="font-medium">
+                        {t('mlTest.dataInfoRecords')}
+                      </span>{' '}
+                      {dataInfo.total_records}
                     </div>
                     <div>
-                      <span className="font-medium">Днів:</span> {dataInfo.days_with_data}
+                      <span className="font-medium">
+                        {t('mlTest.dataInfoDays')}
+                      </span>{' '}
+                      {dataInfo.days_with_data}
                     </div>
                     <div>
-                      <span className="font-medium">Від:</span> {dataInfo.first_date ? new Date(dataInfo.first_date).toLocaleDateString('uk-UA') : '-'}
+                      <span className="font-medium">
+                        {t('mlTest.dataInfoFrom')}
+                      </span>{' '}
+                      {dataInfo.first_date
+                        ? new Date(dataInfo.first_date).toLocaleDateString(
+                            i18n.language === 'en' ? 'en-GB' : 'uk-UA'
+                          )
+                        : '-'}
                     </div>
                     <div>
-                      <span className="font-medium">До:</span> {dataInfo.last_date ? new Date(dataInfo.last_date).toLocaleDateString('uk-UA') : '-'}
+                      <span className="font-medium">
+                        {t('mlTest.dataInfoTo')}
+                      </span>{' '}
+                      {dataInfo.last_date
+                        ? new Date(dataInfo.last_date).toLocaleDateString(
+                            i18n.language === 'en' ? 'en-GB' : 'uk-UA'
+                          )
+                        : '-'}
                     </div>
                   </div>
                 </div>
@@ -255,9 +288,11 @@ const MLTestPage = () => {
         {loading && (
           <div className="bg-white rounded-xl shadow-md p-12 text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 mb-2">Тестування моделі...</p>
+            <p className="text-gray-600 mb-2">
+              {t('mlTest.loadingTitle')}
+            </p>
             <p className="text-sm text-gray-500">
-              Це може зайняти до 2 хвилин. Йде навчання та прогнозування.
+              {t('mlTest.loadingText')}
             </p>
           </div>
         )}
@@ -269,7 +304,9 @@ const MLTestPage = () => {
               <div className="bg-white rounded-xl shadow-md p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Всього даних</p>
+                    <p className="text-sm text-gray-600">
+                      {t('mlTest.summaryTotal')}
+                    </p>
                     <p className="text-2xl font-bold text-blue-600">
                       {testResults.data_info.total_samples}
                     </p>
@@ -281,7 +318,9 @@ const MLTestPage = () => {
               <div className="bg-white rounded-xl shadow-md p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Train вибірка</p>
+                    <p className="text-sm text-gray-600">
+                      {t('mlTest.summaryTrain')}
+                    </p>
                     <p className="text-2xl font-bold text-green-600">
                       {testResults.data_info.train_samples}
                     </p>
@@ -293,7 +332,9 @@ const MLTestPage = () => {
               <div className="bg-white rounded-xl shadow-md p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Test вибірка</p>
+                    <p className="text-sm text-gray-600">
+                      {t('mlTest.summaryTest')}
+                    </p>
                     <p className="text-2xl font-bold text-purple-600">
                       {testResults.data_info.test_samples}
                     </p>
@@ -305,7 +346,9 @@ const MLTestPage = () => {
               <div className="bg-white rounded-xl shadow-md p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Features</p>
+                    <p className="text-sm text-gray-600">
+                      {t('mlTest.summaryFeatures')}
+                    </p>
                     <p className="text-2xl font-bold text-orange-600">
                       {testResults.data_info.features_count}
                     </p>
@@ -318,7 +361,7 @@ const MLTestPage = () => {
             {/* Вибір параметру для відображення */}
             <div className="bg-white rounded-xl shadow-md p-4 mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Параметр для відображення
+                {t('mlTest.parameterSelectLabel')}
               </label>
               <select
                 value={selectedParameter}
@@ -338,7 +381,8 @@ const MLTestPage = () => {
               <div className="bg-white rounded-xl shadow-md p-6 mb-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <Target className="w-6 h-6 text-blue-600" />
-                  Метрики точності: {parameters.find(p => p.key === selectedParameter)?.label}
+                  {t('mlTest.metricsTitle')}{' '}
+                  {parameters.find(p => p.key === selectedParameter)?.label}
                 </h2>
 
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
@@ -348,33 +392,53 @@ const MLTestPage = () => {
                       className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200"
                       title={metric.tooltip}
                     >
-                      <p className="text-xs text-gray-600 mb-1">{metric.label}</p>
-                      <p className={`text-3xl font-bold ${getMetricColor(metric.key, currentMetrics[metric.key])}`}>
-                        {currentMetrics[metric.key]?.toFixed(metric.key === 'r2' ? 3 : 1)}
+                      <p className="text-xs text-gray-600 mb-1">
+                        {metric.label}
+                      </p>
+                      <p
+                        className={`text-3xl font-bold ${getMetricColor(
+                          metric.key,
+                          currentMetrics[metric.key]
+                        )}`}
+                      >
+                        {currentMetrics[metric.key]?.toFixed(
+                          metric.key === 'r2' ? 3 : 1
+                        )}
                         {metric.suffix || ''}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">{metric.description}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {metric.description}
+                      </p>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Середнє реальне: </span>
+                    <span className="text-gray-600">
+                      {t('mlTest.avgActual')}{' '}
+                    </span>
                     <span className="font-semibold text-green-600">
-                      {currentMetrics.avgActual} {parameters.find(p => p.key === selectedParameter)?.unit}
+                      {currentMetrics.avgActual}{' '}
+                      {parameters.find(p => p.key === selectedParameter)?.unit}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Середнє прогнозоване: </span>
+                    <span className="text-gray-600">
+                      {t('mlTest.avgPredicted')}{' '}
+                    </span>
                     <span className="font-semibold text-blue-600">
-                      {currentMetrics.avgPredicted} {parameters.find(p => p.key === selectedParameter)?.unit}
+                      {currentMetrics.avgPredicted}{' '}
+                      {parameters.find(p => p.key === selectedParameter)?.unit}
                     </span>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-gray-600">Розмір тестової вибірки: </span>
+                    <span className="text-gray-600">
+                      {t('mlTest.samplesLabel')}{' '}
+                    </span>
                     <span className="font-semibold text-gray-800">
-                      {currentMetrics.samples} точок
+                      {currentMetrics.samples}{' '}
+                      {t('mlTest.samplesPoints')}
                     </span>
                   </div>
                 </div>
@@ -384,7 +448,8 @@ const MLTestPage = () => {
             {/* Графік порівняння */}
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">
-                Прогноз vs Реальність: {parameters.find(p => p.key === selectedParameter)?.label}
+                {t('mlTest.chartTitle')}{' '}
+                {parameters.find(p => p.key === selectedParameter)?.label}
               </h2>
 
               <ResponsiveContainer width="100%" height={400}>
@@ -399,7 +464,9 @@ const MLTestPage = () => {
                   />
                   <YAxis
                     label={{
-                      value: parameters.find(p => p.key === selectedParameter)?.unit || '',
+                      value:
+                        parameters.find(p => p.key === selectedParameter)?.unit ||
+                        '',
                       angle: -90,
                       position: 'insideLeft'
                     }}
@@ -411,7 +478,7 @@ const MLTestPage = () => {
                     dataKey="actual"
                     stroke="#10b981"
                     strokeWidth={2}
-                    name="Реальність (Test)"
+                    name={t('mlTest.lineActual')}
                     dot={{ fill: '#10b981', r: 3 }}
                   />
                   <Line
@@ -419,7 +486,7 @@ const MLTestPage = () => {
                     dataKey="predicted"
                     stroke="#3b82f6"
                     strokeWidth={2}
-                    name="Прогноз (ML)"
+                    name={t('mlTest.linePredicted')}
                     dot={{ fill: '#3b82f6', r: 3 }}
                   />
                 </LineChart>
@@ -427,9 +494,8 @@ const MLTestPage = () => {
 
               <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>Пояснення:</strong> Графік показує порівняння прогнозованих ML моделлю значень
-                  (синя лінія) з реальними даними з тестової вибірки (зелена лінія).
-                  Чим ближче лінії одна до одної, тим точніша модель.
+                  <strong>{t('mlTest.explanationTitle')}</strong>{' '}
+                  {t('mlTest.explanationText')}
                 </p>
               </div>
             </div>
@@ -440,10 +506,10 @@ const MLTestPage = () => {
           <div className="bg-white rounded-xl shadow-md p-12 text-center">
             <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              Готово до тестування
+              {t('mlTest.readyTitle')}
             </h3>
             <p className="text-gray-600 mb-4">
-              Натисніть "Запустити тест" щоб оцінити точність ML моделі
+              {t('mlTest.readyText')}
             </p>
           </div>
         )}
@@ -452,11 +518,11 @@ const MLTestPage = () => {
           <div className="bg-white rounded-xl shadow-md p-12 text-center">
             <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              Недостатньо даних
+              {t('mlTest.notEnoughTitle')}
             </h3>
             <p className="text-gray-600">
-              Для тестування потрібно мінімум 100 записів.
-              Зараз доступно: {dataInfo.total_records}
+              {t('mlTest.notEnoughText')}{' '}
+              {dataInfo.total_records}
             </p>
           </div>
         )}

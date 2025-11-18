@@ -5,8 +5,10 @@ import { User, Bell, MapPin, Save, LogOut, Mail, Lock, Check } from 'lucide-reac
 import { useAuth } from '../context/AuthContext';
 import { getAQIStatus } from '../utils/helpers';
 import ChangePassword from '../components/ChangePassword';
+import { useTranslation } from 'react-i18next';
 
 const ProfilePage = ({ setCurrentPage, districts }) => {
+  const { t, i18n } = useTranslation();
   const { user, logout, updateProfile } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -29,7 +31,7 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
   const [successMessage, setSuccessMessage] = useState('');
 
   const handlePasswordChanged = () => {
-    setSuccessMessage('Пароль успішно змінено!');
+    setSuccessMessage(t('profile.passwordChangedSuccess'));
     setTimeout(() => setSuccessMessage(''), 3000);
   };
 
@@ -68,10 +70,10 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
           const data = await response.json();
           const districtIds = data.data.subscriptions.map(sub => sub.district_id);
           setSubscribedDistricts(districtIds);
-          setInitialSubscriptions(districtIds); // 🆕 Зберігаємо початковий стан
+          setInitialSubscriptions(districtIds);
         }
       } catch (error) {
-        console.error('Помилка завантаження підписок:', error);
+        console.error(t('profile.errorLoadSubscriptionsConsole'), error);
       } finally {
         setLoadingSubscriptions(false);
       }
@@ -80,7 +82,7 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
     if (user) {
       loadSubscriptions();
     }
-  }, [user]);
+  }, [user, t]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -115,30 +117,30 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
     try {
       const token = localStorage.getItem('token');
 
-      // 🆕 Перевіряємо чи змінились підписки
-      const subscriptionsChanged = JSON.stringify([...subscribedDistricts].sort()) !==
+      const subscriptionsChanged =
+        JSON.stringify([...subscribedDistricts].sort()) !==
         JSON.stringify([...initialSubscriptions].sort());
 
-      // 🆕 Перевіряємо чи email сповіщення увімкнені
       const emailEnabled = formData.notification_preferences.email;
 
-      console.log('📊 Статус змін:', {
+      console.log(t('profile.consoleStatus'), {
         subscriptionsChanged,
         emailEnabled,
         before: initialSubscriptions,
         after: subscribedDistricts
       });
 
-      // Оновлюємо профіль
       const profileResult = await updateProfile(formData);
 
       if (!profileResult.success) {
-        setMessage({ type: 'error', text: profileResult.message || 'Помилка при оновленні профілю' });
+        setMessage({
+          type: 'error',
+          text: profileResult.message || t('profile.errorUpdateProfile')
+        });
         setLoading(false);
         return;
       }
 
-      // Оновлюємо підписки на райони
       const subscriptionsResponse = await fetch('http://localhost:5000/api/subscriptions', {
         method: 'PUT',
         headers: {
@@ -147,50 +149,49 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
         },
         body: JSON.stringify({
           district_ids: subscribedDistricts,
-          notify_daily_summary: emailEnabled, // 🆕 Використовуємо статус email
-          notify_on_high_pollution: emailEnabled, // 🆕
-          send_test_email: subscriptionsChanged && emailEnabled // 🆕 Тільки якщо змінились підписки І email увімкнено
+          notify_daily_summary: emailEnabled,
+          notify_on_high_pollution: emailEnabled,
+          send_test_email: subscriptionsChanged && emailEnabled
         })
       });
 
       if (!subscriptionsResponse.ok) {
-        setMessage({ type: 'error', text: 'Помилка при оновленні підписок' });
+        setMessage({ type: 'error', text: t('profile.errorUpdateSubscriptions') });
         setLoading(false);
         return;
       }
 
       const subscriptionsData = await subscriptionsResponse.json();
 
-      // 🆕 Формуємо повідомлення залежно від ситуації
-      let successText = '✅ Профіль успішно оновлено!';
+      let successText = t('profile.successProfileUpdated');
 
       if (subscriptionsChanged && emailEnabled && subscriptionsData.emailSent) {
-        successText = `✅ Профіль та підписки оновлено! 📧 Тестовий email відправлено на ${user.email}`;
+        successText = t('profile.successProfileAndSubscriptionsEmailSent', {
+          email: user.email
+        });
       } else if (subscriptionsChanged && !emailEnabled) {
-        successText = '✅ Профіль та підписки оновлено! ⚠️ Email сповіщення вимкнені.';
+        successText = t('profile.successProfileAndSubscriptionsEmailDisabled');
       } else if (subscribedDistricts.length > 0 && emailEnabled) {
-        successText = '✅ Профіль оновлено! Email сповіщення будуть надходити щодня о 8:00.';
+        successText = t('profile.successProfileUpdatedEmailsOn');
       } else if (!emailEnabled) {
-        successText = '✅ Профіль оновлено! Email сповіщення вимкнені.';
+        successText = t('profile.successProfileUpdatedEmailsOff');
       }
 
       setMessage({ type: 'success', text: successText });
 
-      // 🆕 Оновлюємо початкові підписки після успішного збереження
       setInitialSubscriptions([...subscribedDistricts]);
 
       setTimeout(() => setMessage({ type: '', text: '' }), 5000);
-
     } catch (error) {
-      console.error('Помилка збереження:', error);
-      setMessage({ type: 'error', text: 'Помилка при збереженні даних' });
+      console.error(t('profile.errorSaveConsole'), error);
+      setMessage({ type: 'error', text: t('profile.errorSaveData') });
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogout = () => {
-    if (window.confirm('Ви впевнені, що хочете вийти?')) {
+    if (window.confirm(t('profile.confirmLogout'))) {
       logout();
       setCurrentPage('home');
     }
@@ -200,12 +201,12 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Увійдіть, щоб переглянути профіль</p>
+          <p className="text-gray-600 mb-4">{t('profile.unauthorizedText')}</p>
           <button
             onClick={() => setCurrentPage('login')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Увійти
+            {t('profile.btnLogin')}
           </button>
         </div>
       </div>
@@ -221,10 +222,14 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                {user.full_name
+                  ? user.full_name.charAt(0).toUpperCase()
+                  : user.email.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-800">{user.full_name || 'Користувач'}</h1>
+                <h1 className="text-3xl font-bold text-gray-800">
+                  {user.full_name || t('profile.headerDefaultName')}
+                </h1>
                 <p className="text-gray-600">{user.email}</p>
               </div>
             </div>
@@ -233,7 +238,7 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
               className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               <LogOut className="w-5 h-5" />
-              Вийти
+              {t('profile.headerLogout')}
             </button>
           </div>
 
@@ -244,10 +249,13 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
           )}
 
           {message.text && (
-            <div className={`mb-4 p-4 rounded-lg ${message.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-800'
-              : 'bg-red-50 border border-red-200 text-red-800'
-              }`}>
+            <div
+              className={`mb-4 p-4 rounded-lg ${
+                message.type === 'success'
+                  ? 'bg-green-50 border border-green-200 text-green-800'
+                  : 'bg-red-50 border border-red-200 text-red-800'
+              }`}
+            >
               {message.text}
             </div>
           )}
@@ -257,13 +265,13 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
             <User className="w-6 h-6 text-blue-600" />
-            Особиста інформація
+            {t('profile.sectionPersonalTitle')}
           </h2>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Повне ім'я
+                {t('profile.fieldFullName')}
               </label>
               <input
                 type="text"
@@ -271,13 +279,13 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
                 value={formData.full_name}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Введіть ваше ім'я"
+                placeholder={t('profile.fieldFullNamePlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Телефон
+                {t('profile.fieldPhone')}
               </label>
               <input
                 type="tel"
@@ -285,19 +293,21 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
                 value={formData.phone}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="+380"
+                placeholder={t('profile.fieldPhonePlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email
+                {t('profile.fieldEmail')}
               </label>
               <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg">
                 <Mail className="w-5 h-5 text-gray-400" />
                 <span className="text-gray-600">{user.email}</span>
               </div>
-              <p className="mt-1 text-sm text-gray-500">Email не можна змінити</p>
+              <p className="mt-1 text-sm text-gray-500">
+                {t('profile.fieldEmailNote')}
+              </p>
             </div>
           </div>
         </div>
@@ -306,21 +316,23 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Lock className="w-6 h-6 text-blue-600" />
-            Безпека
+            {t('profile.sectionSecurityTitle')}
           </h2>
 
-          {/* Інфо про останню зміну пароля */}
           {user.password_changed_at && (
             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>Останнє оновлення:</strong>{' '}
-                {new Date(user.password_changed_at).toLocaleDateString('uk-UA', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+                <strong>{t('profile.passwordLastUpdateLabel')}</strong>{' '}
+                {new Date(user.password_changed_at).toLocaleDateString(
+                  i18n.language === 'en' ? 'en-GB' : 'uk-UA',
+                  {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }
+                )}
               </p>
             </div>
           )}
@@ -330,7 +342,7 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
               onClick={() => setShowChangePassword(true)}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Змінити пароль
+              {t('profile.btnChangePassword')}
             </button>
           ) : (
             <div>
@@ -346,7 +358,7 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
             <Bell className="w-6 h-6 text-blue-600" />
-            Налаштування сповіщень
+            {t('profile.sectionNotificationsTitle')}
           </h2>
 
           <div className="space-y-4">
@@ -354,18 +366,28 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="font-semibold text-gray-800">Email сповіщення</p>
-                  <p className="text-sm text-gray-600">Отримувати щоденні звіти на пошту</p>
+                  <p className="font-semibold text-gray-800">
+                    {t('profile.notifEmailTitle')}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {t('profile.notifEmailDescription')}
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => toggleNotification('email')}
-                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${formData.notification_preferences.email ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                  formData.notification_preferences.email
+                    ? 'bg-blue-600'
+                    : 'bg-gray-300'
+                }`}
               >
                 <span
-                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${formData.notification_preferences.email ? 'translate-x-7' : 'translate-x-1'
-                    }`}
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                    formData.notification_preferences.email
+                      ? 'translate-x-7'
+                      : 'translate-x-1'
+                  }`}
                 />
               </button>
             </div>
@@ -374,8 +396,12 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
               <div className="flex items-center gap-3">
                 <Bell className="w-5 h-5 text-gray-400" />
                 <div>
-                  <p className="font-semibold text-gray-600">Push сповіщення</p>
-                  <p className="text-sm text-gray-500">Незабаром...</p>
+                  <p className="font-semibold text-gray-600">
+                    {t('profile.notifPushTitle')}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {t('profile.notifPushDescription')}
+                  </p>
                 </div>
               </div>
               <div className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-300">
@@ -393,8 +419,12 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
                 </svg>
                 <div>
-                  <p className="font-semibold text-gray-600">Telegram бот</p>
-                  <p className="text-sm text-gray-500">Незабаром...</p>
+                  <p className="font-semibold text-gray-600">
+                    {t('profile.notifTelegramTitle')}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {t('profile.notifTelegramDescription')}
+                  </p>
                 </div>
               </div>
               <div className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-300">
@@ -408,19 +438,21 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
             <MapPin className="w-6 h-6 text-blue-600" />
-            Підписки на райони для email сповіщень
+            {t('profile.sectionSubscriptionsTitle')}
           </h2>
 
           {!formData.notification_preferences.email && (
             <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800">
-              ⚠️ Email сповіщення вимкнені. Увімкніть їх вище, щоб отримувати звіти.
+              {t('profile.subscriptionsEmailDisabledWarning')}
             </div>
           )}
 
           {loadingSubscriptions ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Завантаження підписок...</p>
+              <p className="mt-4 text-gray-600">
+                {t('profile.subscriptionsLoading')}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -432,13 +464,16 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
                   <div
                     key={district.id}
                     onClick={() => toggleDistrictSubscription(district.id)}
-                    className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${isSubscribed
-                      ? 'border-blue-500 bg-blue-50 shadow-md'
-                      : 'border-gray-200 hover:border-blue-300'
-                      }`}
+                    className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                      isSubscribed
+                        ? 'border-blue-500 bg-blue-50 shadow-md'
+                        : 'border-gray-200 hover:border-blue-300'
+                    }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-gray-800">{district.name}</h3>
+                      <h3 className="font-bold text-gray-800">
+                        {district.name}
+                      </h3>
                       {isSubscribed && (
                         <Check className="w-5 h-5 text-blue-600" />
                       )}
@@ -459,14 +494,17 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
             </div>
           )}
 
-          {subscribedDistricts.length > 0 && formData.notification_preferences.email && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>ℹ️ Підказка:</strong> Ви отримуватимете щоденні email звіти о 8:00 ранку
-                з інформацією про якість повітря в обраних районах ({subscribedDistricts.length} вибрано).
-              </p>
-            </div>
-          )}
+          {subscribedDistricts.length > 0 &&
+            formData.notification_preferences.email && (
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>{t('profile.subscriptionsHintTitle')}</strong>{' '}
+                  {t('profile.subscriptionsHintText', {
+                    count: subscribedDistricts.length
+                  })}
+                </p>
+              </div>
+            )}
         </div>
 
         {/* Кнопка збереження */}
@@ -474,25 +512,25 @@ const ProfilePage = ({ setCurrentPage, districts }) => {
           <button
             onClick={handleSave}
             disabled={loading}
-            className={`flex-1 flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all ${loading
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl hover:scale-105'
-              }`}
+            className={`flex-1 flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all ${
+              loading
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl hover:scale-105'
+            }`}
           >
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Збереження...
+                {t('profile.saveLoading')}
               </>
             ) : (
               <>
                 <Save className="w-5 h-5" />
-                Зберегти зміни
+                {t('profile.saveButton')}
               </>
             )}
           </button>
         </div>
-
       </div>
     </div>
   );

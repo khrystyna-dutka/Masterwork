@@ -3,8 +3,11 @@
 import React, { useState } from 'react';
 import { Navigation, RefreshCw } from 'lucide-react';
 import InteractiveMap from '../components/InteractiveMap';
+import { useTranslation } from 'react-i18next';
 
 const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }) => {
+  const { t } = useTranslation();
+
   const [displayMode, setDisplayMode] = useState('baseAQI');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -19,7 +22,7 @@ const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }
       try {
         await refreshData();
       } catch (error) {
-        console.error('Помилка оновлення:', error);
+        console.error(t('map.refreshError'), error);
       } finally {
         setIsRefreshing(false);
       }
@@ -40,80 +43,80 @@ const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }
   // Легенди для різних параметрів
   const legends = {
     baseAQI: {
-      title: 'Легенда якості повітря (AQI):',
+      title: t('map.legendAQITitle'),
       levels: [
-        { color: '#10b981', range: '0-50', label: 'Добра' },
-        { color: '#f59e0b', range: '51-100', label: 'Помірна' },
-        { color: '#f97316', range: '101-150', label: 'Нездорова для чутливих' },
-        { color: '#ef4444', range: '151-200', label: 'Нездорова' },
-        { color: '#9333ea', range: '201-300', label: 'Дуже нездорова' },
-        { color: '#7f1d1d', range: '300+', label: 'Небезпечна' }
+        { color: '#10b981', range: '0-50',  label: t('map.legendLevelGood') },
+        { color: '#f59e0b', range: '51-100', label: t('map.legendLevelModerate') },
+        { color: '#f97316', range: '101-150', label: t('map.legendLevelUSG') },
+        { color: '#ef4444', range: '151-200', label: t('map.legendLevelUnhealthy') },
+        { color: '#9333ea', range: '201-300', label: t('map.legendLevelVeryUnhealthy') },
+        { color: '#7f1d1d', range: '300+',   label: t('map.legendLevelHazardous') }
       ]
     },
     pm25: {
-      title: 'Норми PM2.5 (μg/m³):',
+      title: t('map.legendPM25Title'),
       levels: [
-        { color: '#10b981', range: '0-12', label: 'Добра' },
-        { color: '#f59e0b', range: '12.1-35.4', label: 'Помірна' },
-        { color: '#f97316', range: '35.5-55.4', label: 'Нездорова для чутливих' },
-        { color: '#ef4444', range: '55.5-150.4', label: 'Нездорова' },
-        { color: '#9333ea', range: '150.5-250.4', label: 'Дуже нездорова' },
-        { color: '#7f1d1d', range: '250.5+', label: 'Небезпечна' }
+        { color: '#10b981', range: '0-12',      label: t('map.legendLevelGood') },
+        { color: '#f59e0b', range: '12.1-35.4', label: t('map.legendLevelModerate') },
+        { color: '#f97316', range: '35.5-55.4', label: t('map.legendLevelUSG') },
+        { color: '#ef4444', range: '55.5-150.4',label: t('map.legendLevelUnhealthy') },
+        { color: '#9333ea', range: '150.5-250.4',label: t('map.legendLevelVeryUnhealthy') },
+        { color: '#7f1d1d', range: '250.5+',   label: t('map.legendLevelHazardous') }
       ]
     },
     pm10: {
-      title: 'Норми PM10 (μg/m³):',
+      title: t('map.legendPM10Title'),
       levels: [
-        { color: '#10b981', range: '0-54', label: 'Добра' },
-        { color: '#f59e0b', range: '55-154', label: 'Помірна' },
-        { color: '#f97316', range: '155-254', label: 'Нездорова для чутливих' },
-        { color: '#ef4444', range: '255-354', label: 'Нездорова' },
-        { color: '#9333ea', range: '355-424', label: 'Дуже нездорова' },
-        { color: '#7f1d1d', range: '425+', label: 'Небезпечна' }
+        { color: '#10b981', range: '0-54',   label: t('map.legendLevelGood') },
+        { color: '#f59e0b', range: '55-154', label: t('map.legendLevelModerate') },
+        { color: '#f97316', range: '155-254',label: t('map.legendLevelUSG') },
+        { color: '#ef4444', range: '255-354',label: t('map.legendLevelUnhealthy') },
+        { color: '#9333ea', range: '355-424',label: t('map.legendLevelVeryUnhealthy') },
+        { color: '#7f1d1d', range: '425+',   label: t('map.legendLevelHazardous') }
       ]
     },
     no2: {
-      title: 'Норми NO₂ (μg/m³):',
+      title: t('map.legendNO2Title'),
       levels: [
-        { color: '#10b981', range: '0-53', label: 'Добра' },
-        { color: '#f59e0b', range: '54-100', label: 'Помірна' },
-        { color: '#f97316', range: '101-360', label: 'Нездорова для чутливих' },
-        { color: '#ef4444', range: '361-649', label: 'Нездорова' },
-        { color: '#9333ea', range: '650-1249', label: 'Дуже нездорова' },
-        { color: '#7f1d1d', range: '1250+', label: 'Небезпечна' }
+        { color: '#10b981', range: '0-53',   label: t('map.legendLevelGood') },
+        { color: '#f59e0b', range: '54-100', label: t('map.legendLevelModerate') },
+        { color: '#f97316', range: '101-360',label: t('map.legendLevelUSG') },
+        { color: '#ef4444', range: '361-649',label: t('map.legendLevelUnhealthy') },
+        { color: '#9333ea', range: '650-1249',label: t('map.legendLevelVeryUnhealthy') },
+        { color: '#7f1d1d', range: '1250+', label: t('map.legendLevelHazardous') }
       ]
     },
     so2: {
-      title: 'Норми SO₂ (μg/m³):',
+      title: t('map.legendSO2Title'),
       levels: [
-        { color: '#10b981', range: '0-35', label: 'Добра' },
-        { color: '#f59e0b', range: '36-75', label: 'Помірна' },
-        { color: '#f97316', range: '76-185', label: 'Нездорова для чутливих' },
-        { color: '#ef4444', range: '186-304', label: 'Нездорова' },
-        { color: '#9333ea', range: '305-604', label: 'Дуже нездорова' },
-        { color: '#7f1d1d', range: '605+', label: 'Небезпечна' }
+        { color: '#10b981', range: '0-35',   label: t('map.legendLevelGood') },
+        { color: '#f59e0b', range: '36-75',  label: t('map.legendLevelModerate') },
+        { color: '#f97316', range: '76-185', label: t('map.legendLevelUSG') },
+        { color: '#ef4444', range: '186-304',label: t('map.legendLevelUnhealthy') },
+        { color: '#9333ea', range: '305-604',label: t('map.legendLevelVeryUnhealthy') },
+        { color: '#7f1d1d', range: '605+',   label: t('map.legendLevelHazardous') }
       ]
     },
     co: {
-      title: 'Норми CO (μg/m³):',
+      title: t('map.legendCOTitle'),
       levels: [
-        { color: '#10b981', range: '0-4400', label: 'Добра' },
-        { color: '#f59e0b', range: '4401-9400', label: 'Помірна' },
-        { color: '#f97316', range: '9401-12400', label: 'Нездорова для чутливих' },
-        { color: '#ef4444', range: '12401-15400', label: 'Нездорова' },
-        { color: '#9333ea', range: '15401-30400', label: 'Дуже нездорова' },
-        { color: '#7f1d1d', range: '30401+', label: 'Небезпечна' }
+        { color: '#10b981', range: '0-4400',   label: t('map.legendLevelGood') },
+        { color: '#f59e0b', range: '4401-9400',label: t('map.legendLevelModerate') },
+        { color: '#f97316', range: '9401-12400',label: t('map.legendLevelUSG') },
+        { color: '#ef4444', range: '12401-15400',label: t('map.legendLevelUnhealthy') },
+        { color: '#9333ea', range: '15401-30400',label: t('map.legendLevelVeryUnhealthy') },
+        { color: '#7f1d1d', range: '30401+',  label: t('map.legendLevelHazardous') }
       ]
     },
     o3: {
-      title: 'Норми O₃ (μg/m³):',
+      title: t('map.legendO3Title'),
       levels: [
-        { color: '#10b981', range: '0-54', label: 'Добра' },
-        { color: '#f59e0b', range: '55-70', label: 'Помірна' },
-        { color: '#f97316', range: '71-85', label: 'Нездорова для чутливих' },
-        { color: '#ef4444', range: '86-105', label: 'Нездорова' },
-        { color: '#9333ea', range: '106-200', label: 'Дуже нездорова' },
-        { color: '#7f1d1d', range: '201+', label: 'Небезпечна' }
+        { color: '#10b981', range: '0-54',   label: t('map.legendLevelGood') },
+        { color: '#f59e0b', range: '55-70',  label: t('map.legendLevelModerate') },
+        { color: '#f97316', range: '71-85',  label: t('map.legendLevelUSG') },
+        { color: '#ef4444', range: '86-105', label: t('map.legendLevelUnhealthy') },
+        { color: '#9333ea', range: '106-200',label: t('map.legendLevelVeryUnhealthy') },
+        { color: '#7f1d1d', range: '201+',   label: t('map.legendLevelHazardous') }
       ]
     }
   };
@@ -125,7 +128,7 @@ const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-3">
           <Navigation className="text-blue-600" />
-          Інтерактивна карта Львова
+          {t('map.title')}
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -144,7 +147,7 @@ const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }
           <div className="space-y-4 flex flex-col">
             {/* Вибір параметра */}
             <div className="bg-white rounded-lg shadow-lg p-4">
-              <h3 className="font-bold text-gray-800 mb-3">Шари:</h3>
+              <h3 className="font-bold text-gray-800 mb-3">{t('map.layersTitle')}</h3>
               <div className="space-y-2">
                 {parameters.map(param => (
                   <button
@@ -174,7 +177,7 @@ const MapPage = ({ districts, setCurrentPage, setSelectedDistrict, refreshData }
                 }`}
             >
               <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-              {isRefreshing ? 'Оновлення...' : 'Оновити дані'}
+              {isRefreshing ? t('map.refreshUpdating') : t('map.refreshLabel')}
             </button>
 
             {/* Легенда */}

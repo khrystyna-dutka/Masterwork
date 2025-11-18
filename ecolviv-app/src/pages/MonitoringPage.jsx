@@ -5,9 +5,12 @@ import AirQualityChart from '../components/AirQualityChart/AirQualityChart';
 import './MonitoringPage.css';
 import AQITimeline from '../components/AQITimeline';
 import { Wrench } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // 🔧 Додай setCurrentPage в пропси
 const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict, setCurrentPage }) => {
+  const { t } = useTranslation();
+
   const getAQIColor = (aqi) => {
     if (aqi <= 50) return '#10b981';
     if (aqi <= 100) return '#f59e0b';
@@ -18,12 +21,12 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict, setC
   };
 
   const getAQIStatus = (aqi) => {
-    if (aqi <= 50) return 'Добра';
-    if (aqi <= 100) return 'Помірна';
-    if (aqi <= 150) return 'Нездорова для чутливих';
-    if (aqi <= 200) return 'Нездорова';
-    if (aqi <= 300) return 'Дуже нездорова';
-    return 'Небезпечна';
+    if (aqi <= 50) return t('monitoring.aqiGood');
+    if (aqi <= 100) return t('monitoring.aqiModerate');
+    if (aqi <= 150) return t('monitoring.aqiUnhealthySensitive');
+    if (aqi <= 200) return t('monitoring.aqiUnhealthy');
+    if (aqi <= 300) return t('monitoring.aqiVeryUnhealthy');
+    return t('monitoring.aqiHazardous');
   };
 
   return (
@@ -32,9 +35,9 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict, setC
         <header className="monitoring-header">
           <div className="flex items-center justify-between">
             <div>
-              <h1>📊 Моніторинг якості повітря</h1>
+              <h1>📊 {t('monitoring.title')}</h1>
               <p className="monitoring-subtitle">
-                Детальна інформація про стан повітря в районах Львова
+                {t('monitoring.subtitle')}
               </p>
             </div>
 
@@ -42,17 +45,17 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict, setC
             <button
               onClick={() => setCurrentPage('ml-test')}
               className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 hover:text-gray-800 transition-all flex items-center gap-2 border border-gray-300"
-              title="Тестування ML моделі (тільки для розробки)"
+              title={t('monitoring.mlTestButtonTitle')}
             >
               <Wrench className="w-4 h-4" />
-              <span className="hidden md:inline">Тест ML</span>
+              <span className="hidden md:inline">{t('monitoring.mlTestButton')}</span>
             </button>
           </div>
         </header>
 
         {/* Список районів */}
         <div className="districts-list">
-          <h2>Оберіть район для перегляду деталей</h2>
+          <h2>{t('monitoring.selectDistrictTitle')}</h2>
           <div className="districts-grid">
             {districts.map((district) => {
               const aqi = district.baseAQI || 50;
@@ -82,12 +85,16 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict, setC
 
                   <div className="district-card-details">
                     <div className="detail-item">
-                      <span className="detail-label">PM2.5:</span>
-                      <span className="detail-value">{district.pm25?.toFixed(1) || 'N/A'} μg/m³</span>
+                      <span className="detail-label">{t('monitoring.pm25Label')}</span>
+                      <span className="detail-value">
+                        {district.pm25?.toFixed(1) || 'N/A'} μg/m³
+                      </span>
                     </div>
                     <div className="detail-item">
-                      <span className="detail-label">PM10:</span>
-                      <span className="detail-value">{district.pm10?.toFixed(1) || 'N/A'} μg/m³</span>
+                      <span className="detail-label">{t('monitoring.pm10Label')}</span>
+                      <span className="detail-value">
+                        {district.pm10?.toFixed(1) || 'N/A'} μg/m³
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -119,7 +126,7 @@ const MonitoringPage = ({ districts, selectedDistrict, setSelectedDistrict, setC
 
         {!selectedDistrict && (
           <div className="no-selection">
-            <p>👆 Оберіть район зі списку вище, щоб побачити детальну інформацію</p>
+            <p>{t('monitoring.noSelectionText')}</p>
           </div>
         )}
       </div>

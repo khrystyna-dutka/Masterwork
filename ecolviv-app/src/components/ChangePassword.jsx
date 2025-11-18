@@ -1,10 +1,11 @@
-// src/components/ChangePassword.jsx
-
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, Check, X } from 'lucide-react';
 import authService from '../services/authService';
+import { useTranslation } from 'react-i18next';
 
 const ChangePassword = ({ onClose, onSuccess }) => {
+  const { t } = useTranslation();
+
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -25,12 +26,9 @@ const ChangePassword = ({ onClose, onSuccess }) => {
       ...prev,
       [name]: value
     }));
-    
+
     if (validationErrors[name]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setValidationErrors(prev => ({ ...prev, [name]: '' }));
     }
     setError('');
   };
@@ -46,26 +44,29 @@ const ChangePassword = ({ onClose, onSuccess }) => {
     const errors = {};
 
     if (!formData.currentPassword) {
-      errors.currentPassword = 'Поточний пароль обов\'язковий';
+      errors.currentPassword = t('changePassword.validation.currentRequired');
     }
 
     if (!formData.newPassword) {
-      errors.newPassword = 'Новий пароль обов\'язковий';
+      errors.newPassword = t('changePassword.validation.newRequired');
     } else if (formData.newPassword.length < 6) {
-      errors.newPassword = 'Пароль має містити мінімум 6 символів';
+      errors.newPassword = t('changePassword.validation.newMinLength');
     } else if (!/\d/.test(formData.newPassword)) {
-      errors.newPassword = 'Пароль має містити хоча б одну цифру';
+      errors.newPassword = t('changePassword.validation.newDigit');
     }
 
     if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Підтвердження пароля обов\'язкове';
+      errors.confirmPassword = t('changePassword.validation.confirmRequired');
     } else if (formData.newPassword !== formData.confirmPassword) {
-      errors.confirmPassword = 'Паролі не співпадають';
+      errors.confirmPassword = t('changePassword.validation.notMatch');
     }
 
-    if (formData.currentPassword && formData.newPassword && 
-        formData.currentPassword === formData.newPassword) {
-      errors.newPassword = 'Новий пароль має відрізнятися від поточного';
+    if (
+      formData.currentPassword &&
+      formData.newPassword &&
+      formData.currentPassword === formData.newPassword
+    ) {
+      errors.newPassword = t('changePassword.validation.mustDiffer');
     }
 
     return errors;
@@ -73,8 +74,8 @@ const ChangePassword = ({ onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const errors = validate();
+
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       return;
@@ -90,18 +91,15 @@ const ChangePassword = ({ onClose, onSuccess }) => {
       );
 
       if (response.success) {
-        // Оновлюємо дані користувача в AuthContext
-        const profileResponse = await authService.getProfile();
-        
+        await authService.getProfile();
         onSuccess?.();
-        setTimeout(() => {
-          onClose();
-        }, 1500);
+
+        setTimeout(() => onClose(), 1500);
       } else {
-        setError(response.message || 'Помилка при зміні пароля');
+        setError(response.message || t('changePassword.errorGeneral'));
       }
     } catch (err) {
-      setError(err.message || 'Помилка при зміні пароля');
+      setError(err.message || t('changePassword.errorGeneral'));
     } finally {
       setLoading(false);
     }
@@ -109,7 +107,7 @@ const ChangePassword = ({ onClose, onSuccess }) => {
 
   const getPasswordStrength = (password) => {
     if (!password) return { strength: 0, label: '', color: '' };
-    
+
     let strength = 0;
     if (password.length >= 6) strength++;
     if (password.length >= 8) strength++;
@@ -118,15 +116,15 @@ const ChangePassword = ({ onClose, onSuccess }) => {
     if (/[^a-zA-Z0-9]/.test(password)) strength++;
 
     const levels = [
-      { strength: 0, label: '', color: '' },
-      { strength: 1, label: 'Дуже слабкий', color: '#ef4444' },
-      { strength: 2, label: 'Слабкий', color: '#f59e0b' },
-      { strength: 3, label: 'Середній', color: '#f59e0b' },
-      { strength: 4, label: 'Сильний', color: '#10b981' },
-      { strength: 5, label: 'Дуже сильний', color: '#10b981' },
+      { label: '', color: '' },
+      { label: t('changePassword.strengthVeryWeak'), color: '#ef4444' },
+      { label: t('changePassword.strengthWeak'), color: '#f59e0b' },
+      { label: t('changePassword.strengthMedium'), color: '#f59e0b' },
+      { label: t('changePassword.strengthStrong'), color: '#10b981' },
+      { label: t('changePassword.strengthVeryStrong'), color: '#10b981' }
     ];
 
-    return levels[strength];
+    return { strength, ...levels[strength] };
   };
 
   const passwordStrength = getPasswordStrength(formData.newPassword);
@@ -134,30 +132,30 @@ const ChangePassword = ({ onClose, onSuccess }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
             <Lock className="text-blue-600" size={24} />
-            Зміна пароля
+            {t('changePassword.title')}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X size={24} />
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Поточний пароль */}
+
+          {/* Current password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Поточний пароль
+            <label className="block text-sm font-medium mb-2">
+              {t('changePassword.currentPassword')}
             </label>
             <div className="relative">
               <input
@@ -165,29 +163,26 @@ const ChangePassword = ({ onClose, onSuccess }) => {
                 name="currentPassword"
                 value={formData.currentPassword}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${
-                  validationErrors.currentPassword ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Введіть поточний пароль"
-                disabled={loading}
+                placeholder={t('changePassword.placeholderCurrent')}
+                className={`w-full px-4 py-2 pr-10 border rounded-lg ${validationErrors.currentPassword ? 'border-red-500' : ''}`}
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('current')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2"
               >
                 {showPasswords.current ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
             {validationErrors.currentPassword && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.currentPassword}</p>
+              <p className="text-sm text-red-600">{validationErrors.currentPassword}</p>
             )}
           </div>
 
-          {/* Новий пароль */}
+          {/* New password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Новий пароль
+            <label className="block text-sm font-medium mb-2">
+              {t('changePassword.newPassword')}
             </label>
             <div className="relative">
               <input
@@ -195,31 +190,29 @@ const ChangePassword = ({ onClose, onSuccess }) => {
                 name="newPassword"
                 value={formData.newPassword}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${
-                  validationErrors.newPassword ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Введіть новий пароль"
-                disabled={loading}
+                placeholder={t('changePassword.placeholderNew')}
+                className={`w-full px-4 py-2 pr-10 border rounded-lg ${validationErrors.newPassword ? 'border-red-500' : ''}`}
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('new')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2"
               >
                 {showPasswords.new ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+
             {validationErrors.newPassword && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.newPassword}</p>
+              <p className="text-sm text-red-600">{validationErrors.newPassword}</p>
             )}
-            
-            {/* Індикатор надійності пароля */}
+
+            {/* Password strength */}
             {formData.newPassword && (
               <div className="mt-2">
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full transition-all duration-300"
+                      className="h-full transition-all"
                       style={{
                         width: `${(passwordStrength.strength / 5) * 100}%`,
                         backgroundColor: passwordStrength.color
@@ -233,22 +226,23 @@ const ChangePassword = ({ onClose, onSuccess }) => {
                     {passwordStrength.label}
                   </span>
                 </div>
+
                 <div className="text-xs text-gray-600 space-y-1">
                   <p className={formData.newPassword.length >= 6 ? 'text-green-600' : ''}>
-                    {formData.newPassword.length >= 6 ? '✓' : '○'} Мінімум 6 символів
+                    {formData.newPassword.length >= 6 ? '✓' : '○'} {t('changePassword.requireMinLength')}
                   </p>
                   <p className={/\d/.test(formData.newPassword) ? 'text-green-600' : ''}>
-                    {/\d/.test(formData.newPassword) ? '✓' : '○'} Містить цифру
+                    {/\d/.test(formData.newPassword) ? '✓' : '○'} {t('changePassword.requireDigit')}
                   </p>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Підтвердження пароля */}
+          {/* Confirm */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Підтвердження нового пароля
+            <label className="block text-sm font-medium mb-2">
+              {t('changePassword.confirmPassword')}
             </label>
             <div className="relative">
               <input
@@ -256,49 +250,50 @@ const ChangePassword = ({ onClose, onSuccess }) => {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${
-                  validationErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Повторіть новий пароль"
-                disabled={loading}
+                placeholder={t('changePassword.placeholderConfirm')}
+                className={`w-full px-4 py-2 pr-10 border rounded-lg ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('confirm')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2"
               >
                 {showPasswords.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+
             {validationErrors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.confirmPassword}</p>
+              <p className="text-sm text-red-600">{validationErrors.confirmPassword}</p>
             )}
-            {formData.confirmPassword && formData.newPassword === formData.confirmPassword && (
-              <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
-                <Check size={16} /> Паролі співпадають
-              </p>
-            )}
+
+            {formData.confirmPassword &&
+              formData.newPassword === formData.confirmPassword && (
+                <p className="text-sm text-green-600 flex items-center gap-1 mt-1">
+                  <Check size={16} /> {t('changePassword.match')}
+                </p>
+              )}
           </div>
 
-          {/* Кнопки */}
+          {/* Buttons */}
           <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-              disabled={loading}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
             >
-              Скасувати
+              {t('changePassword.cancel')}
             </button>
+
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg"
               disabled={loading}
             >
-              {loading ? 'Збереження...' : 'Змінити пароль'}
+              {loading ? t('changePassword.saving') : t('changePassword.save')}
             </button>
           </div>
         </form>
+
       </div>
     </div>
   );

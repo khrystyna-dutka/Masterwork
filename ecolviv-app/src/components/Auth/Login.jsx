@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
+import { useTranslation } from 'react-i18next';
 
 const Login = ({ setCurrentPage }) => {
   const { login, error } = useAuth();
-  
+  const { t } = useTranslation();
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -32,13 +34,13 @@ const Login = ({ setCurrentPage }) => {
     const errors = {};
 
     if (!formData.email) {
-      errors.email = 'Email обов\'язковий';
+      errors.email = t('auth.validation.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Невірний формат email';
+      errors.email = t('auth.validation.emailInvalid');
     }
 
     if (!formData.password) {
-      errors.password = 'Пароль обов\'язковий';
+      errors.password = t('auth.validation.passwordRequired');
     }
 
     return errors;
@@ -65,8 +67,10 @@ const Login = ({ setCurrentPage }) => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Вхід до EcoLviv</h2>
-        <p className="auth-subtitle">Увійдіть до свого облікового запису</p>
+        <h2>{t('auth.loginTitle')}</h2>
+        <p className="auth-subtitle">
+          {t('auth.loginSubtitle')}
+        </p>
 
         {error && (
           <div className="auth-error">
@@ -76,7 +80,9 @@ const Login = ({ setCurrentPage }) => {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">
+              {t('auth.emailLabel')}
+            </label>
             <input
               type="email"
               id="email"
@@ -84,7 +90,7 @@ const Login = ({ setCurrentPage }) => {
               value={formData.email}
               onChange={handleChange}
               className={validationErrors.email ? 'error' : ''}
-              placeholder="example@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               disabled={loading}
             />
             {validationErrors.email && (
@@ -93,7 +99,9 @@ const Login = ({ setCurrentPage }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Пароль</label>
+            <label htmlFor="password">
+              {t('auth.passwordLabel')}
+            </label>
             <input
               type="password"
               id="password"
@@ -101,7 +109,7 @@ const Login = ({ setCurrentPage }) => {
               value={formData.password}
               onChange={handleChange}
               className={validationErrors.password ? 'error' : ''}
-              placeholder="••••••••"
+              placeholder={t('auth.passwordPlaceholder')}
               disabled={loading}
             />
             {validationErrors.password && (
@@ -114,18 +122,18 @@ const Login = ({ setCurrentPage }) => {
             className="auth-button"
             disabled={loading}
           >
-            {loading ? 'Вхід...' : 'Увійти'}
+            {loading ? t('auth.loginButtonLoading') : t('auth.loginButton')}
           </button>
         </form>
 
         <div className="auth-footer">
           <p>
-            Ще немає акаунту?{' '}
+            {t('auth.noAccountText')}{' '}
             <button 
               onClick={() => setCurrentPage('register')}
               className="auth-link"
             >
-              Зареєструватися
+              {t('auth.registerLink')}
             </button>
           </p>
         </div>

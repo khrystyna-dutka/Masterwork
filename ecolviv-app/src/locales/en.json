@@ -11,130 +11,757 @@
     "logout": "Logout",
     "register": "Register"
   },
+
   "home": {
-    "title": "Air Quality Monitoring",
-    "subtitle": "Real-time air quality data for Lviv",
-    "lastUpdate": "Last update",
-    "refreshData": "Refresh data"
+    "brand": "EcoLviv",
+    "heroSubtitle": "Intelligent system for monitoring and forecasting air quality in Lviv",
+
+    "viewMap": "View map",
+    "analytics": "Analytics",
+
+    "featureRealtimeTitle": "Real-time monitoring",
+    "featureRealtimeText": "Track air quality across all districts of Lviv with detailed PM2.5, PM10 and NO₂ indicators",
+
+    "featureForecastTitle": "Forecasting",
+    "featureForecastText": "Receive air quality forecasts for the next 12–72 hours to plan your activities",
+
+    "featureScenarioTitle": "Scenario modelling",
+    "featureScenarioText": "Explore how traffic and greenery affect the air quality in your district",
+
+    "currentTitle": "Current situation in Lviv",
+    "districtStatusGood": "Good",
+    "districtStatusModerate": "Moderate",
+    "districtStatusBad": "Bad",
+    "districtStatusVeryBad": "Very bad"
   },
+
+  "login": {
+    "loginTitle": "System Login",
+    "registerTitle": "Registration",
+    "subtitle": "EcoLviv - air quality monitoring",
+
+    "nameLabel": "Name *",
+    "namePlaceholder": "Enter your name",
+
+    "emailLabel": "Email *",
+
+    "passwordLabel": "Password *",
+    "passwordMinLength": "Minimum 6 characters",
+    "confirmPasswordLabel": "Confirm password *",
+
+    "loginBtn": "Log in",
+    "registerBtn": "Sign up",
+
+    "switchToRegister": "No account? Sign up",
+    "switchToLogin": "Already have an account? Log in",
+
+    "termsNotice": "By registering, you agree to the Terms of Use and Privacy Policy",
+
+    "demoAccess": "Or use demo access:",
+    "fillDemoData": "Fill demo data",
+
+    "alertFillAll": "Please fill in all fields",
+    "alertEnterName": "Please enter your name",
+    "alertPasswordsNotMatch": "Passwords do not match!",
+    "alertPasswordShort": "Password must be at least 6 characters long"
+  },
+
+  "map": {
+    "title": "Interactive map of Lviv",
+    "layersTitle": "Layers:",
+
+    "refreshUpdating": "Updating...",
+    "refreshLabel": "Refresh data",
+    "refreshError": "Refresh error:",
+
+    "legendAQITitle": "Air Quality Index (AQI) legend:",
+    "legendPM25Title": "PM2.5 guideline values (μg/m³):",
+    "legendPM10Title": "PM10 guideline values (μg/m³):",
+    "legendNO2Title": "NO₂ guideline values (μg/m³):",
+    "legendSO2Title": "SO₂ guideline values (μg/m³):",
+    "legendCOTitle": "CO guideline values (μg/m³):",
+    "legendO3Title": "O₃ guideline values (μg/m³):",
+
+    "legendLevelGood": "Good",
+    "legendLevelModerate": "Moderate",
+    "legendLevelUSG": "Unhealthy for sensitive groups",
+    "legendLevelUnhealthy": "Unhealthy",
+    "legendLevelVeryUnhealthy": "Very unhealthy",
+    "legendLevelHazardous": "Hazardous"
+  },
+
+  "mlTest": {
+    "parameterAQI": "AQI (Air Quality Index)",
+
+    "errorLoadInfo": "Error loading data info",
+    "consoleStartTest": "Starting test...",
+    "consoleResults": "Test results",
+    "errorTestConsole": "Test error",
+    "errorTestAlert": "Testing error",
+
+    "title": "ML model testing",
+    "subtitle": "Evaluating forecasting accuracy on historical data (Train/Test Split)",
+
+    "fieldDistrict": "District",
+    "fieldDays": "Data period (days)",
+    "fieldTestSize": "Test set size (%)",
+    "fieldAction": "Action",
+
+    "days7": "7 days",
+    "days14": "14 days",
+    "days21": "21 days",
+    "days30": "30 days",
+    "days60": "60 days",
+
+    "btnTesting": "Testing...",
+    "btnRunTest": "Run test",
+
+    "dataInfoTitle": "Available data for district:",
+    "dataInfoRecords": "Records:",
+    "dataInfoDays": "Days with data:",
+    "dataInfoFrom": "From:",
+    "dataInfoTo": "To:",
+
+    "loadingTitle": "Model testing...",
+    "loadingText": "This may take up to 2 minutes. Training and forecasting are in progress.",
+
+    "summaryTotal": "Total samples",
+    "summaryTrain": "Train samples",
+    "summaryTest": "Test samples",
+    "summaryFeatures": "Number of features",
+
+    "parameterSelectLabel": "Parameter to display",
+
+    "metricMaeDescription": "Mean Absolute Error",
+    "metricMaeTooltip": "Average deviation of the forecast from the actual value",
+
+    "metricRmseDescription": "Root Mean Squared Error",
+    "metricRmseTooltip": "Shows the overall accuracy of the model",
+
+    "metricMapeDescription": "Mean Absolute Percentage Error",
+    "metricMapeTooltip": "Error expressed as a percentage of the actual value",
+
+    "metricR2Description": "Coefficient of determination",
+    "metricR2Tooltip": "Model quality (1.0 = perfect)",
+
+    "metricAccuracyLabel": "Accuracy",
+    "metricAccuracyDescription": "Forecasts within ±10% of actual values",
+    "metricAccuracyTooltip": "Percentage of forecasts that fall within the acceptable range",
+
+    "metricsTitle": "Accuracy metrics:",
+
+    "avgActual": "Average actual:",
+    "avgPredicted": "Average predicted:",
+    "samplesLabel": "Test set size:",
+    "samplesPoints": "points",
+
+    "chartTitle": "Forecast vs Reality:",
+    "lineActual": "Actual (Test)",
+    "linePredicted": "Forecast (ML)",
+
+    "explanationTitle": "Explanation:",
+    "explanationText": "The chart compares values predicted by the ML model (blue line) with actual data from the test set (green line). The closer the lines are, the more accurate the model is.",
+
+    "readyTitle": "Ready for testing",
+    "readyText": "Click “Run test” to evaluate the accuracy of the ML model.",
+
+    "notEnoughTitle": "Not enough data",
+    "notEnoughText": "At least 100 records are required for testing. Currently available:"
+  },
+
+  "monitoring": {
+    "title": "Air quality monitoring",
+    "subtitle": "Detailed information about air conditions in Lviv districts",
+
+    "mlTestButtonTitle": "ML model testing (development only)",
+    "mlTestButton": "ML test",
+
+    "selectDistrictTitle": "Select a district to view details",
+
+    "pm25Label": "PM2.5:",
+    "pm10Label": "PM10:",
+
+    "noSelectionText": "👆 Select a district from the list above to see detailed information",
+
+    "aqiGood": "Good",
+    "aqiModerate": "Moderate",
+    "aqiUnhealthySensitive": "Unhealthy for sensitive groups",
+    "aqiUnhealthy": "Unhealthy",
+    "aqiVeryUnhealthy": "Very unhealthy",
+    "aqiHazardous": "Hazardous"
+  },
+
+  "profile": {
+    "passwordChangedSuccess": "Password changed successfully!",
+
+    "errorLoadSubscriptionsConsole": "Error loading subscriptions:",
+    "errorUpdateProfile": "Error updating profile",
+    "errorUpdateSubscriptions": "Error updating subscriptions",
+    "errorSaveConsole": "Error saving:",
+    "errorSaveData": "Error while saving data",
+
+    "confirmLogout": "Are you sure you want to log out?",
+
+    "unauthorizedText": "Log in to view your profile",
+    "btnLogin": "Log in",
+
+    "headerDefaultName": "User",
+    "headerLogout": "Log out",
+
+    "sectionPersonalTitle": "Personal information",
+    "fieldFullName": "Full name",
+    "fieldFullNamePlaceholder": "Enter your name",
+    "fieldPhone": "Phone",
+    "fieldPhonePlaceholder": "+380",
+    "fieldEmail": "Email",
+    "fieldEmailNote": "Email cannot be changed",
+
+    "sectionSecurityTitle": "Security",
+    "passwordLastUpdateLabel": "Last update:",
+    "btnChangePassword": "Change password",
+
+    "sectionNotificationsTitle": "Notification settings",
+    "notifEmailTitle": "Email notifications",
+    "notifEmailDescription": "Receive daily reports by email",
+    "notifPushTitle": "Push notifications",
+    "notifPushDescription": "Coming soon...",
+    "notifTelegramTitle": "Telegram bot",
+    "notifTelegramDescription": "Coming soon...",
+
+    "sectionSubscriptionsTitle": "District subscriptions for email notifications",
+    "subscriptionsEmailDisabledWarning": "⚠️ Email notifications are disabled. Enable them above to receive reports.",
+    "subscriptionsLoading": "Loading subscriptions...",
+
+    "subscriptionsHintTitle": "ℹ️ Tip:",
+    "subscriptionsHintText": "You will receive daily email reports at 8:00 with air quality information for the selected districts ({{count}} selected).",
+
+    "consoleStatus": "📊 Change status:",
+
+    "successProfileUpdated": "✅ Profile updated successfully!",
+    "successProfileAndSubscriptionsEmailSent": "✅ Profile and subscriptions updated! 📧 A test email has been sent to {{email}}",
+    "successProfileAndSubscriptionsEmailDisabled": "✅ Profile and subscriptions updated! ⚠️ Email notifications are disabled.",
+    "successProfileUpdatedEmailsOn": "✅ Profile updated! Email notifications will be sent daily at 8:00.",
+    "successProfileUpdatedEmailsOff": "✅ Profile updated! Email notifications are disabled.",
+
+    "saveLoading": "Saving...",
+    "saveButton": "Save changes"
+  },
+
   "research": {
-    "title": "Scientific Research",
-    "subtitle": "Train your own ML models on your dataset for air quality forecasting",
-    "step1": "Dataset",
-    "step2": "Settings",
-    "step3": "Training",
-    "step4": "Results",
+    "title": "Research module",
+    "subtitle": "Train your own ML models on a custom dataset to forecast air quality",
+
+    "steps": {
+      "dataset": "Dataset",
+      "settings": "Settings",
+      "training": "Training",
+      "results": "Results"
+    },
+    "stepsHint": "💡 Click on completed steps to go back",
+    "stepLabel": "Step {{current}} of {{total}}",
+    "startOver": "Start over",
+
     "uploadTitle": "Upload your dataset",
-    "uploadSubtitle": "Drag and drop CSV file here or click",
-    "maxSize": "Maximum size: 50 MB",
-    "requiredColumns": "Required columns in dataset:",
-    "minRows": "Important: Dataset must contain at least 1000 rows for quality training!",
-    "downloadTemplate": "Download example dataset (1500 rows, London)",
-    "modelSettings": "Model Settings",
-    "dataSplit": "Data Split",
-    "trainSplit": "Training Split (%)",
-    "testSplit": "Test Split (%)",
-    "validationSplit": "Validation Split (%)",
-    "algorithm": "Machine Learning Algorithm",
-    "hyperparameters": "Hyperparameters",
-    "epochs": "Number of Epochs",
-    "batchSize": "Batch Size",
-    "learningRate": "Learning Rate",
-    "architecture": "Neural Network Architecture",
-    "hiddenLayers": "Number of Hidden Layers",
-    "dropoutRate": "Dropout Rate (0-0.5)",
-    "neuronsPerLayer": "Neurons in each layer",
-    "featureEngineering": "Feature Engineering",
-    "lagHours": "Lag Hours (how many hours back)",
-    "rollingWindow": "Rolling Window (hours)",
-    "startTraining": "Start Training",
-    "back": "Back",
-    "training": "Training model...",
-    "trainingComplete": "Model successfully trained!",
-    "trainingTime": "Training Time",
-    "finalLoss": "Final Loss",
-    "valLoss": "Val Loss",
-    "metricsTitle": "Accuracy Metrics by Parameters:",
-    "visualization": "Results Visualization",
-    "actualVsPredicted": "Actual vs Predicted Values",
-    "correlation": "Correlation Analysis",
-    "residuals": "Prediction Residuals",
-    "exportReport": "Download Report TXT",
-    "exportCSV": "Export Metrics CSV",
-    "exportConfig": "Save Configuration JSON",
-    "changeSettings": "Change Settings",
-    "loadOtherDataset": "Load Another Dataset",
-    "newResearch": "New Research",
-    "startOver": "Start Over",
-    "stepOfTotal": "Step {{current}} of {{total}}",
-    "clickToNavigate": "Click on completed steps to go back",
-    "algorithmXGBoost": "XGBoost",
-    "algorithmXGBoostDesc": "Gradient Boosting (fast, accurate)",
-    "algorithmLSTM": "LSTM",
-    "algorithmLSTMDesc": "Recurrent Neural Network (for time series)",
-    "algorithmRandomForest": "Random Forest",
-    "algorithmRandomForestDesc": "Ensemble of decision trees"
+    "uploadDrop": "Drag & drop a CSV file here or click",
+    "uploadMaxSize": "Maximum size: 50 MB",
+
+    "requiredColumnsTitle": "Required columns in the dataset:",
+    "requiredColumnsWarningTitle": "⚠️ Important:",
+    "requiredColumnsWarningText": "The dataset must contain at least 1000 rows for quality training!",
+    "requiredColumnsWarningSub": "For best results, use 1500+ rows of hourly data.",
+    "downloadTemplate": "Download sample dataset (1500 rows, London)",
+
+    "errorFileType": "Please upload a CSV file",
+    "errorFileSize": "File is too large. Maximum is 50 MB",
+    "errorNoDataset": "Please upload a dataset first!",
+    "errorTrainingAlert": "Training error",
+    "consoleStartTraining": "Starting model training...",
+    "consoleResults": "Results received:",
+    "consoleError": "Error:",
+
+    "datasetInfoTitle": "Uploaded dataset",
+    "datasetInfoFile": "File:",
+    "datasetInfoSize": "Size:",
+    "datasetInfoRows": "Rows:",
+    "datasetPreviewLabel": "Preview (first 5 rows):",
+
+    "modelSettingsTitle": "Model settings",
+    "splitTitle": "Data split",
+    "splitTrain": "Train split (%)",
+    "splitTest": "Test split (%)",
+    "splitValidation": "Validation split (%)",
+
+    "algorithmTitle": "Machine learning algorithm",
+    "algorithmXgboostName": "XGBoost",
+    "algorithmXgboostDesc": "Gradient Boosting (fast, accurate)",
+    "algorithmLstmName": "LSTM",
+    "algorithmLstmDesc": "Recurrent neural network (time series)",
+    "algorithmRFName": "Random Forest",
+    "algorithmRFDesc": "Ensemble of decision trees",
+
+    "hyperparamsTitle": "Hyperparameters",
+    "hyperparamsEpochs": "Number of epochs",
+    "hyperparamsBatchSize": "Batch size",
+    "hyperparamsLR": "Learning rate",
+
+    "lstmTitle": "Neural network architecture",
+    "lstmHiddenLayers": "Number of hidden layers",
+    "lstmDropout": "Dropout rate (0-0.5)",
+    "lstmNeuronsTitle": "Neurons in each layer",
+    "lstmLayerLabel": "Layer {{index}}",
+
+    "feTitle": "Feature engineering",
+    "feLagHours": "Lag hours (how many hours back)",
+    "feRollingWindow": "Rolling window (hours)",
+
+    "btnBack": "Back",
+    "btnStartTraining": "Start training",
+
+    "trainingTitle": "Model is training...",
+    "trainingText": "The model is analyzing {{rows}} data rows and learning...",
+    "trainingSubtitle": "Algorithm: {{algo}} | Epochs: {{epochs}}",
+
+    "resultsTitle": "The model has been successfully trained!",
+    "resultsTrainTime": "Training time",
+    "resultsFinalLoss": "Final loss",
+    "resultsValLoss": "Val loss",
+    "resultsAlgorithm": "Algorithm",
+
+    "metricsTitle": "Accuracy metrics by parameter:",
+    "metricsMae": "MAE",
+    "metricsRmse": "RMSE",
+    "metricsR2": "R² score:",
+
+    "plotsTitle": "Results visualisation",
+    "plotActualVsPred": "Actual vs predicted values",
+    "plotCorrelation": "Correlation analysis",
+    "plotResiduals": "Prediction residuals",
+
+    "btnExportTxt": "Download TXT report",
+    "btnExportCsv": "Export metrics CSV",
+    "btnExportJson": "Save JSON config",
+    "btnChangeSettings": "Change settings",
+    "btnUploadAnother": "Upload another dataset",
+    "btnNewResearch": "New research"
   },
-  "scenarios": {
-    "title": "Scenario Testing",
-    "subtitle": "Test ML model response to extreme conditions and recovery time",
-    "selectDistrict": "District for testing",
-    "action": "Action",
-    "runTest": "Run Test",
-    "testing": "Testing...",
-    "selectScenario": "Select scenario and run test",
-    "modelWillPredict": "Model will predict how air quality will change in extreme conditions",
-    "initialConditions": "Initial Conditions",
-    "recoveryAnalysis": "Recovery Analysis by Parameters",
-    "initial": "Initial",
-    "after12h": "After 12 hours",
-    "change": "Change",
-    "safeIn": "Safe in {{hours}} hours",
-    "moderateIn": "Moderate in {{hours}} hours",
-    "wontBeSafe": "Won't reach safe level",
-    "fullRecovery": "Full recovery in {{hours}} hours",
-    "partialRecovery": "Partial recovery",
-    "allParametersSafe": "All parameters will reach safe level.",
-    "slowestRecovery": "Slowest recovery: {{param}}",
-    "notAllSafe": "Not all parameters will reach safe level in 12 hours.",
-    "stayIndoors": "Recommended to stay indoors and use protection.",
-    "parameterDetails": "Parameter for detailed view",
-    "dynamicsWithZones": "Dynamics: {{param}} with safety zones",
-    "safe": "Safe",
-    "moderate": "Moderate",
-    "critical": "Critical",
-    "customScenario": "Custom Scenario",
-    "customScenarioDesc": "Set your own pollution values",
-    "configureParams": "Configure all parameters →",
-    "pollutionParams": "Pollution Parameters:",
-    "advancedParams": "Advanced parameters (weather)",
-    "showAdvanced": "Show advanced parameters",
-    "hideAdvanced": "Hide advanced parameters"
+
+  "scenario": {
+    "chartCenterLabel": "Balance",
+    "loading": "Loading data...",
+
+    "title": "Scenario modeling",
+    "subtitle": "Create a change scenario and evaluate its impact on air quality",
+
+    "step1Title": "Step 1: Select a district",
+    "step2Title": "Step 2: Choose a preset scenario or adjust manually",
+
+    "settingsTitle": "Parameter settings",
+
+    "sliderCurrentLabel": "Now:",
+    "sliderResultLabel": "Result:",
+
+    "paramGreenAreas": "Green areas",
+    "paramTraffic": "Traffic",
+    "paramIndustry": "Industrial zones",
+    "paramPopulation": "Population",
+
+    "unitPercent": "%",
+    "unitZones": " zones",
+    "unitPeople": " people",
+    "unitThousandShort": "k",
+
+    "btnSimulate": "Step 3: Calculate impact",
+    "btnSimulateLoading": "Calculating...",
+    "btnReset": "Reset",
+
+    "resultsTitle": "Simulation results",
+    "compareTitle": "District state comparison",
+    "currentStateTitle": "Current state",
+    "predictedStateTitle": "Predicted state",
+
+    "airImpactTitle": "Impact on air quality",
+    "currentAQITitle": "Current AQI",
+    "predictedAQITitle": "Predicted AQI",
+
+    "overallImprovedTitle": "✅ Air quality improvement",
+    "overallWorsenedTitle": "⚠️ Air quality deterioration",
+
+    "summaryImproved": "Improved {{improved}} out of {{total}} parameters.",
+    "summarySafe": "Safe: {{safe}}/{{total}}.",
+
+    "detailedAnalysisTitle": "Detailed parameter analysis",
+    "thresholdLabel": "Threshold:",
+    "currentLabel": "Now:",
+    "predictedLabel": "Forecast:",
+    "safeLabel": "Safe",
+    "aboveNormLabel": "Above the norm",
+
+    "aqiStatus": {
+      "Good": "Good",
+      "Moderate": "Moderate",
+      "Unhealthy_for_Sensitive_Groups": "Unhealthy for sensitive groups",
+      "Unhealthy": "Unhealthy",
+      "Very_Unhealthy": "Very unhealthy",
+      "Hazardous": "Hazardous"
+    },
+    "aqiChangeImproved": "↓ Improvement",
+    "aqiChangeWorsened": "↑ Deterioration",
+
+    "presets": {
+      "green_city": {
+        "name": "🌳 Green city",
+        "description": "Greening +25%"
+      },
+      "pedestrian_zone": {
+        "name": "🚶 Pedestrian zone",
+        "description": "Traffic -40%"
+      },
+      "eco_transport": {
+        "name": "🚲 Eco transport",
+        "description": "Greenery +15%, traffic -25%"
+      },
+      "new_park": {
+        "name": "🏞️ New park",
+        "description": "Park +30%, traffic -15%"
+      },
+      "industrial": {
+        "name": "🏭 Industrial zone",
+        "description": "+5 factories"
+      },
+      "residential": {
+        "name": "🏘️ New residential buildings",
+        "description": "+15k population"
+      }
+    },
+
+    "errorSimulation": "Error while simulating scenario",
+    "customScenarioName": "Custom scenario"
   },
-  "aqi": {
-    "good": "Good",
-    "moderate": "Moderate",
-    "unhealthyForSensitive": "Unhealthy for Sensitive",
-    "unhealthy": "Unhealthy",
-    "veryUnhealthy": "Very Unhealthy",
-    "hazardous": "Hazardous"
+
+  "scenarioTest": {
+    "customForm": {
+      "title": "Custom scenario settings",
+      "pollutionTitle": "Pollution parameters:",
+      "advancedToggle": "Additional parameters (weather)",
+      "runButton": "Run test with custom parameters",
+      "hint": "💡 Set extreme values to test the recovery forecast"
+    },
+
+    "common": {
+      "testing": "Testing..."
+    },
+
+    "title": "Scenario testing",
+    "subtitle": "Checking the ML model reaction to extreme conditions and recovery time",
+
+    "districtLabel": "District for testing",
+
+    "errorLoadScenarios": "Error loading scenarios",
+    "errorRunTest": "Error during testing",
+    "hourSuffix": "h",
+
+    "presets": {
+      "customName": "Custom scenario",
+      "customDescription": "Set your own pollution values",
+      "customCta": "Adjust all parameters →"
+    },
+
+    "runPresetButton": "Run scenario test",
+    "runPresetButtonLoading": "Testing...",
+
+    "loadingBox": {
+      "title": "Simulating an extreme scenario...",
+      "subtitle": "The model analyzes the situation and forecasts the next 12 hours"
+    },
+
+    "initialConditionsTitle": "Initial conditions: {{scenarioName}}",
+
+    "analysisTitle": "Recovery analysis by parameters",
+
+    "status": {
+      "safe": "Safe",
+      "moderate": "Moderate",
+      "high": "Elevated",
+      "critical": "Critical"
+    },
+
+    "paramStart": "Start:",
+    "paramAfterHours": "After {{hours}} h:",
+    "paramChange": "Change:",
+
+    "safeInHours": "Safe in {{hours}} h",
+    "moderateInHours": "Moderate in {{hours}} h",
+    "notReachSafe": "Will not reach a safe level",
+
+    "summary": {
+      "fullRecoveryTitle": "✅ Full recovery in {{hours}} hours",
+      "fullRecoveryText": "All parameters will reach a safe level. The slowest to recover: {{paramLabel}}",
+      "partialTitle": "⚠️ Partial recovery",
+      "partialText": "Not all parameters will reach a safe level within 12 hours. It is recommended to stay indoors and use protection."
+    },
+
+    "chartParamLabel": "Parameter for detailed view",
+
+    "chartTitle": "Dynamics: {{paramLabel}} with safety zones",
+
+    "safeLevelShort": "Safe",
+    "moderateLevelShort": "Moderate",
+    "criticalLevelShort": "Critical",
+
+    "legend": {
+      "safe": "Safe: < {{value}}",
+      "moderate": "Moderate: {{safe}}–{{moderate}}",
+      "critical": "Critical: > {{value}}"
+    },
+
+    "emptyTitle": "Select a scenario and start the test",
+    "emptySubtitle": "The model will forecast how air quality changes in extreme conditions and when each parameter will reach a safe level"
   },
-  "common": {
-    "loading": "Loading...",
-    "error": "Error",
-    "success": "Success",
+
+  "airQualityChart": {
+    "loading": "Loading data...",
+    "noData": "📊 Not enough data to plot the chart",
+
+    "title": "Air quality chart - {{district}}",
+
+    "history": {
+      "label": "📊 History (back from now):",
+      "period": {
+        "1h": "1 hour",
+        "12h": "12 hours",
+        "24h": "24 hours",
+        "48h": "48 hours"
+      }
+    },
+
+    "forecast": {
+      "label": "🔮 Forecast (forward from now):",
+      "period": {
+        "none": "Off",
+        "12h": "12 hours",
+        "24h": "24 hours",
+        "48h": "48 hours"
+      }
+    },
+
+    "metricsLabel": "📊 Show on chart:",
+    "nowMarker": "▶ NOW"
+  },
+
+  "airQualityDetails": {
+    "headerTitle": "Detailed indicators for {{name}} district",
+    "updatedAt": "Updated:",
+    "dataSource": "Source:",
+
+    "status": {
+      "good": "Good",
+      "moderate": "Moderate",
+      "unhealthy": "Unhealthy",
+      "hazardous": "Hazardous"
+    },
+
+    "pollutants": {
+      "pm25": {
+        "description": "Fine particles"
+      },
+      "pm10": {
+        "description": "Coarse particles"
+      },
+      "no2": {
+        "description": "Nitrogen dioxide"
+      },
+      "so2": {
+        "description": "Sulfur dioxide"
+      },
+      "co": {
+        "description": "Carbon monoxide"
+      },
+      "o3": {
+        "description": "Ozone"
+      }
+    },
+
+    "infoTitle": "ℹ️ Information about indicators",
+    "info": {
+      "pm": "PM2.5 and PM10 are particulate matter in the air from transport and industry",
+      "no2": "NO₂ is formed when fuel is burned in vehicles",
+      "so2": "SO₂ comes mainly from industrial emissions",
+      "co": "CO is carbon monoxide formed during incomplete combustion",
+      "o3": "O₃ is ground-level ozone formed under sunlight"
+    }
+  },
+
+  "auth": {
+    "loginTitle": "Log in to EcoLviv",
+    "loginSubtitle": "Sign in to your account",
+
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+
+    "emailPlaceholder": "example@email.com",
+    "passwordPlaceholder": "••••••••",
+
+    "loginButton": "Log in",
+    "loginButtonLoading": "Logging in...",
+
+    "noAccountText": "Don't have an account yet?",
+    "registerLink": "Sign up",
+
+    "registerTitle": "Sign up to EcoLviv",
+    "registerSubtitle": "Create your account",
+
+    "fullNameLabel": "Full name *",
+    "fullNamePlaceholder": "Ivan Ivanov",
+
+    "phoneLabel": "Phone (optional)",
+    "phonePlaceholder": "+380501234567",
+
+    "confirmPasswordLabel": "Confirm password *",
+
+    "registerButton": "Sign up",
+    "registerButtonLoading": "Signing up...",
+
+    "alreadyHaveAccountText": "Already have an account?",
+    "loginLink": "Log in",
+
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email format",
+
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Password must be at least 6 characters",
+      "passwordMustContainDigit": "Password must contain at least one digit",
+
+      "confirmPasswordRequired": "Password confirmation is required",
+      "passwordsDoNotMatch": "Passwords do not match",
+
+      "fullNameRequired": "Full name is required",
+      "fullNameMinLength": "Name must be at least 2 characters long",
+
+      "phoneInvalid": "Invalid phone format"
+    }
+    
+  },
+
+  "aqiTimeline": {
+    "title": "Weekly air quality forecast",
+    "errorLoad": "Failed to load forecast",
+    "noData": "No data to display",
+
+    "todayBadge": "Today",
+
+    "infoTitle": "The forecast is based on historical trends",
+    "infoText": "Past days show actual average values. Future days are forecast based on the current state and trend.",
+
+    "status": {
+      "good": "Good",
+      "moderate": "Moderate",
+      "unhealthySensitive": "Unhealthy for sensitive groups",
+      "unhealthy": "Unhealthy",
+      "veryUnhealthy": "Very unhealthy",
+      "hazardous": "Hazardous"
+    }
+  },
+
+  "date": {
+    "daysShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "monthsShort": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  },
+
+  "changePassword": {
+    "title": "Change password",
+
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+
+    "placeholderCurrent": "Enter current password",
+    "placeholderNew": "Enter new password",
+    "placeholderConfirm": "Repeat new password",
+
     "cancel": "Cancel",
-    "save": "Save",
-    "delete": "Delete",
-    "edit": "Edit",
-    "close": "Close",
-    "ok": "OK",
-    "yes": "Yes",
-    "no": "No",
-    "search": "Search",
-    "filter": "Filter",
-    "sort": "Sort",
-    "download": "Download",
-    "upload": "Upload"
+    "save": "Change password",
+    "saving": "Saving...",
+
+    "match": "Passwords match",
+
+    "strengthVeryWeak": "Very weak",
+    "strengthWeak": "Weak",
+    "strengthMedium": "Medium",
+    "strengthStrong": "Strong",
+    "strengthVeryStrong": "Very strong",
+
+    "requireMinLength": "At least 6 characters",
+    "requireDigit": "Contains a digit",
+
+    "errorGeneral": "Error changing password",
+
+    "validation": {
+      "currentRequired": "Current password is required",
+      "newRequired": "New password is required",
+      "newMinLength": "Password must be at least 6 characters long",
+      "newDigit": "Password must contain at least one digit",
+      "confirmRequired": "Password confirmation is required",
+      "notMatch": "Passwords do not match",
+      "mustDiffer": "New password must be different from the current one"
+    }
+  },
+
+  "districtCard": {
+    "population": "Population",
+    "traffic": "Traffic",
+    "trees": "Green areas",
+    
+    "pm25": "PM2.5",
+    "pm10": "PM10",
+    "no2": "NO₂",
+
+    "unit": "μg/m³"
+  },
+
+  "aqi": {
+    "status": {
+      "good": "Good",
+      "moderate": "Moderate",
+      "unhealthy_sensitive": "Unhealthy for sensitive groups",
+      "unhealthy": "Unhealthy",
+      "very_unhealthy": "Very unhealthy",
+      "hazardous": "Hazardous",
+      "unknown": "Unknown"
+    }
+  },
+  "interactiveMap": {
+    "mapTitle": "Map of Lviv districts",
+    "parameter": {
+      "aqi": "AQI",
+      "pm25": "PM2.5",
+      "pm10": "PM10",
+      "no2": "NO₂",
+      "so2": "SO₂",
+      "co": "CO",
+      "o3": "O₃"
+    },
+    "state": "Status",
+    "anomaly": {
+      "better": "✨ Significantly better than average",
+      "worse": "⚠️ Significantly worse than average",
+      "problem": "🚨 Problematic district"
+    },
+    "detailsHint": "Click for detailed information",
+    "unit": "μg/m³"
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

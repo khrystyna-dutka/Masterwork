@@ -13,8 +13,11 @@ import {
 } from 'recharts';
 import { airQualityAPI, forecastAPI } from '../../services/api';
 import './AirQualityChart.css';
+import { useTranslation } from 'react-i18next';
 
 const AirQualityChart = ({ districtId, districtName }) => {
+    const { t } = useTranslation();
+
     const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [historyPeriod, setHistoryPeriod] = useState('24h');
@@ -41,7 +44,6 @@ const AirQualityChart = ({ districtId, districtName }) => {
             console.log('  Період історії:', historyPeriod);
             console.log('  Період прогнозу:', forecastPeriod);
             console.log('  URL:', `/air-quality/district/${districtId}/history?period=${historyPeriod}`);
-
 
             // 1. Завантажити історичні дані
             const historyResponse = await airQualityAPI.getDistrictHistory(districtId, historyPeriod);
@@ -140,7 +142,7 @@ const AirQualityChart = ({ districtId, districtName }) => {
             <div className="air-quality-chart">
                 <div className="chart-loading">
                     <div className="spinner"></div>
-                    <p>Завантаження даних...</p>
+                    <p>{t('airQualityChart.loading')}</p>
                 </div>
             </div>
         );
@@ -150,7 +152,7 @@ const AirQualityChart = ({ districtId, districtName }) => {
         return (
             <div className="air-quality-chart">
                 <div className="chart-no-data">
-                    <p>📊 Недостатньо даних для побудови графіка</p>
+                    <p>{t('airQualityChart.noData')}</p>
                 </div>
             </div>
         );
@@ -160,14 +162,16 @@ const AirQualityChart = ({ districtId, districtName }) => {
         <div className="air-quality-chart">
             {/* Header */}
             <div className="chart-header">
-                <h3>📈 Графік якості повітря - {districtName}</h3>
+                <h3>📈 {t('airQualityChart.title', { district: districtName })}</h3>
             </div>
 
             {/* Контроли */}
             <div className="chart-controls-grid">
                 {/* Історія */}
                 <div className="control-group">
-                    <label className="control-label">📊 Історія (назад від зараз):</label>
+                    <label className="control-label">
+                        {t('airQualityChart.history.label')}
+                    </label>
                     <div className="period-selector">
                         {['1h', '12h', '24h', '48h'].map(p => (
                             <button
@@ -175,7 +179,7 @@ const AirQualityChart = ({ districtId, districtName }) => {
                                 className={`period-btn ${historyPeriod === p ? 'active' : ''}`}
                                 onClick={() => setHistoryPeriod(p)}
                             >
-                                {p === '1h' ? '1 год' : p === '12h' ? '12 год' : p === '24h' ? '24 год' : '48 год'}
+                                {t(`airQualityChart.history.period.${p}`)}
                             </button>
                         ))}
                     </div>
@@ -183,7 +187,9 @@ const AirQualityChart = ({ districtId, districtName }) => {
 
                 {/* Прогноз */}
                 <div className="control-group">
-                    <label className="control-label">🔮 Прогноз (вперед від зараз):</label>
+                    <label className="control-label">
+                        {t('airQualityChart.forecast.label')}
+                    </label>
                     <div className="period-selector">
                         {['none', '12h', '24h', '48h'].map(p => (
                             <button
@@ -191,7 +197,7 @@ const AirQualityChart = ({ districtId, districtName }) => {
                                 className={`period-btn ${forecastPeriod === p ? 'active' : ''}`}
                                 onClick={() => setForecastPeriod(p)}
                             >
-                                {p === 'none' ? 'Вимкнено' : p === '12h' ? '12 год' : p === '24h' ? '24 год' : '48 год'}
+                                {t(`airQualityChart.forecast.period.${p}`)}
                             </button>
                         ))}
                     </div>
@@ -200,7 +206,7 @@ const AirQualityChart = ({ districtId, districtName }) => {
 
             {/* Вибір метрик */}
             <div className="metric-selector">
-                <label>📊 Показати на графіку:</label>
+                <label>{t('airQualityChart.metricsLabel')}</label>
                 <div className="metric-buttons">
                     {metrics.map(metric => (
                         <button
@@ -273,7 +279,7 @@ const AirQualityChart = ({ districtId, districtName }) => {
                                             fontWeight="bold"
                                             textAnchor="middle"
                                         >
-                                            ▶ ЗАРАЗ
+                                            {t('airQualityChart.nowMarker')}
                                         </text>
                                     </g>
                                 );

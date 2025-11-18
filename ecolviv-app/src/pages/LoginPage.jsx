@@ -2,8 +2,11 @@
 
 import React, { useState } from 'react';
 import { Wind } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
+  const { t } = useTranslation();
+
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,21 +16,21 @@ const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
   const handleSubmit = () => {
     // Валідація
     if (!email || !password) {
-      alert('Будь ласка, заповніть всі поля');
+      alert(t('login.alertFillAll'));
       return;
     }
 
     if (!isLogin) {
       if (!name) {
-        alert('Будь ласка, введіть ваше ім\'я');
+        alert(t('login.alertEnterName'));
         return;
       }
       if (password !== confirmPassword) {
-        alert('Паролі не співпадають!');
+        alert(t('login.alertPasswordsNotMatch'));
         return;
       }
       if (password.length < 6) {
-        alert('Пароль має містити мінімум 6 символів');
+        alert(t('login.alertPasswordShort'));
         return;
       }
     }
@@ -35,7 +38,7 @@ const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
     // Успішний вхід/реєстрація
     setIsLoggedIn(true);
     setUserData({
-      name: name || 'Користувач',
+      name: name || t('login.defaultUser'),
       email,
       notifications: {
         email: true,
@@ -55,30 +58,30 @@ const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
             <Wind className="text-blue-600" size={32} />
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            {isLogin ? 'Вхід до системи' : 'Реєстрація'}
+            {isLogin ? t('login.loginTitle') : t('login.registerTitle')}
           </h2>
-          <p className="text-gray-600">EcoLviv - моніторинг якості повітря</p>
+          <p className="text-gray-600">{t('login.subtitle')}</p>
         </div>
 
         <div className="space-y-4">
           {!isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ім'я *
+                {t('login.nameLabel')} *
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                placeholder="Введіть ваше ім'я"
+                placeholder={t('login.namePlaceholder')}
               />
             </div>
           )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email *
+              {t('login.emailLabel')} *
             </label>
             <input
               type="email"
@@ -91,7 +94,7 @@ const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Пароль *
+              {t('login.passwordLabel')} *
             </label>
             <input
               type="password"
@@ -101,14 +104,16 @@ const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
               placeholder="••••••••"
             />
             {!isLogin && (
-              <p className="text-xs text-gray-500 mt-1">Мінімум 6 символів</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {t('login.passwordMinLength')}
+              </p>
             )}
           </div>
 
           {!isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Підтвердіть пароль *
+                {t('login.confirmPasswordLabel')} *
               </label>
               <input
                 type="password"
@@ -124,7 +129,7 @@ const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
             onClick={handleSubmit}
             className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition mt-6"
           >
-            {isLogin ? 'Увійти' : 'Зареєструватися'}
+            {isLogin ? t('login.loginBtn') : t('login.registerBtn')}
           </button>
         </div>
 
@@ -139,23 +144,19 @@ const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
             }}
             className="text-blue-600 hover:text-blue-700 text-sm font-medium"
           >
-            {isLogin
-              ? 'Немає акаунту? Зареєструватися'
-              : 'Вже є акаунт? Увійти'
-            }
+            {isLogin ? t('login.switchToRegister') : t('login.switchToLogin')}
           </button>
         </div>
 
         {!isLogin && (
           <div className="mt-4 text-xs text-gray-500 text-center">
-            Реєструючись, ви погоджуєтесь з умовами використання та політикою конфіденційності
+            {t('login.termsNotice')}
           </div>
         )}
 
-        {/* Демо-доступ */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <p className="text-sm text-gray-600 text-center mb-3">
-            Або використайте демо-доступ:
+            {t('login.demoAccess')}
           </p>
           <button
             onClick={() => {
@@ -165,7 +166,7 @@ const LoginPage = ({ setIsLoggedIn, setUserData, setCurrentPage }) => {
             }}
             className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-sm"
           >
-            Заповнити демо-дані
+            {t('login.fillDemoData')}
           </button>
         </div>
       </div>

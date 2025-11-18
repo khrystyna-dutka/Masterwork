@@ -3,8 +3,11 @@
 import React from 'react';
 import { Wind, MapPin, TrendingUp, AlertCircle, Navigation, BarChart3, LogIn, User } from 'lucide-react';
 import { getAQIStatus } from '../utils/helpers';
+import { useTranslation } from 'react-i18next';
 
 const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-50">
       <div className="max-w-6xl mx-auto px-4 py-16">
@@ -14,9 +17,7 @@ const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }
             <Wind className="text-blue-600" size={48} />
           </div>
           <h1 className="text-5xl font-bold text-gray-800 mb-4">EcoLviv</h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Інтелектуальна система моніторингу та прогнозування якості повітря у Львові
-          </p>
+          <p className="text-xl text-gray-600 mb-8">{t('home.heroSubtitle')}</p>
 
           <div className="flex flex-wrap justify-center gap-4">
             <button
@@ -24,14 +25,14 @@ const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }
               className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2"
             >
               <Navigation size={20} />
-              Переглянути карту
+              {t('home.viewMap')}
             </button>
             <button
               onClick={() => setCurrentPage('monitoring')}
               className="px-8 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition flex items-center gap-2"
             >
               <BarChart3 size={20} />
-              Аналітика
+              {t('home.analytics')}
             </button>
           </div>
         </div>
@@ -43,10 +44,10 @@ const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }
               <MapPin className="text-blue-600" size={24} />
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">
-              Моніторинг в реальному часі
+              {t('home.featureRealtimeTitle')}
             </h3>
             <p className="text-gray-600">
-              Відстежуйте якість повітря у всіх районах Львова з детальними показниками PM2.5, PM10 та NO₂
+              {t('home.featureRealtimeText')}
             </p>
           </div>
 
@@ -54,9 +55,9 @@ const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
               <TrendingUp className="text-green-600" size={24} />
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Прогнозування</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">{t('home.featureForecastTitle')}</h3>
             <p className="text-gray-600">
-              Отримуйте прогнози якості повітря на наступні 12-72 години для планування активностей
+              {t('home.featureForecastText')}
             </p>
           </div>
 
@@ -64,9 +65,9 @@ const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
               <AlertCircle className="text-purple-600" size={24} />
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Сценарне моделювання</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">{t('home.featureScenarioTitle')}</h3>
             <p className="text-gray-600">
-              Досліджуйте вплив трафіку та озеленення на якість повітря у вашому районі
+              {t('home.featureScenarioText')}
             </p>
           </div>
         </div>
@@ -74,7 +75,7 @@ const HomePage = ({ districts, setCurrentPage, setSelectedDistrict, isLoggedIn }
         {/* Current Stats */}
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-            Поточна ситуація у Львові
+            {t('home.currentTitle')}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {districts.map(district => {

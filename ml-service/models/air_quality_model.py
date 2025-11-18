@@ -8,9 +8,7 @@ import os
 from config import Config
 import json
 
-class AirQualityModel:
-    """ML модель для прогнозування якості повітря"""
-    
+class AirQualityModel:  
     def __init__(self, district_id, model_type='xgboost'):
         self.district_id = district_id
         self.model_type = model_type
@@ -25,7 +23,6 @@ class AirQualityModel:
         )
     
     def create_model(self):
-        """Створити модель з ANTI-OVERFITTING параметрами"""
         if self.model_type == 'xgboost':
             base_model = xgb.XGBRegressor(
                 n_estimators=50,          
@@ -54,21 +51,14 @@ class AirQualityModel:
         else:
             raise ValueError(f"Unknown model type: {self.model_type}")
         
-        # MultiOutput для прогнозування всіх параметрів одночасно
         self.model = MultiOutputRegressor(base_model)
-        
         return self.model
+    
     def train(self, X_train, y_train, X_val=None, y_val=None):
-        """Навчити модель"""
         print(f"\n🎯 Навчання {self.model_type} моделі (з anti-overfitting)...")
-        
-        # Створити модель
+
         self.create_model()
-        
-        # Навчити модель
         self.model.fit(X_train, y_train)
-        
-        # Оцінити якість
         train_score = self.model.score(X_train, y_train)
         
         val_score = None
@@ -80,18 +70,14 @@ class AirQualityModel:
             print(f"✅ Val R²: {val_score:.4f}")
             diff = abs(train_score - val_score)
             print(f"   Різниця: {diff:.4f}")
-            
             if diff < 0.15:
                 print(f"   ✅ Добре! Немає overfitting!")
             elif diff < 0.25:
                 print(f"   ⚠️ Невелика різниця")
             else:
                 print(f"   ❌ Можливий overfitting")
-        
-        # Зберегти модель
+
         self.save_model()
-        
-        # Зберегти метрики
         metrics = {
             'train_r2': float(train_score),
             'val_r2': float(val_score) if val_score else None,
@@ -105,20 +91,16 @@ class AirQualityModel:
         return train_score, val_score
     
     def predict(self, X):
-        """Прогноз"""
         if self.model is None:
             raise ValueError("Model not trained or loaded")
-        
         return self.model.predict(X)
     
     def save_model(self):
-        """Зберегти модель"""
         os.makedirs(Config.MODEL_PATH, exist_ok=True)
         joblib.dump(self.model, self.model_path)
         print(f"✅ Модель збережена: {self.model_path}")
     
     def load_model(self):
-        """Завантажити модель"""
         if os.path.exists(self.model_path):
             self.model = joblib.load(self.model_path)
             print(f"✅ Модель завантажена: {self.model_path}")

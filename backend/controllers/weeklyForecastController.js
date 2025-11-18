@@ -91,7 +91,7 @@ exports.getWeeklyForecast = async (req, res) => {
       const boundedAQI = Math.max(10, Math.min(150, forecastAQI));
       
       futureDays.push({
-        date: futureDate.toISOString().split('T')[0],
+        date: futureDate.toISOString().split('T')[0], // ✅ YYYY-MM-DD формат
         avg_aqi: boundedAQI
       });
 
@@ -103,8 +103,13 @@ exports.getWeeklyForecast = async (req, res) => {
 
     // Додаємо минулі дні
     pastDaysResult.rows.forEach(row => {
+      // ✅ ВИПРАВЛЕННЯ: Конвертуємо Date в string формат YYYY-MM-DD
+      const dateStr = row.date instanceof Date 
+        ? row.date.toISOString().split('T')[0]
+        : row.date;
+      
       timeline.push({
-        date: row.date,
+        date: dateStr,
         aqi: parseInt(row.avg_aqi),
         isPast: true,
         isCurrent: false,
@@ -114,7 +119,7 @@ exports.getWeeklyForecast = async (req, res) => {
 
     // Додаємо сьогодні
     timeline.push({
-      date: today.toISOString().split('T')[0],
+      date: today.toISOString().split('T')[0], // ✅ YYYY-MM-DD формат
       aqi: parseInt(currentAQI),
       isPast: false,
       isCurrent: true,
@@ -124,7 +129,7 @@ exports.getWeeklyForecast = async (req, res) => {
     // Додаємо майбутні дні
     futureDays.forEach(day => {
       timeline.push({
-        date: day.date,
+        date: day.date, // Вже в правильному форматі
         aqi: day.avg_aqi,
         isPast: false,
         isCurrent: false,

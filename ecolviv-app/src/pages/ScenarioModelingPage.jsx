@@ -19,9 +19,11 @@ import {
   Target
 } from 'lucide-react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
 // Кругова діаграма для району
 const DistrictPieChart = ({ data, size = 150 }) => {
+  const { t } = useTranslation();
   const { trees, traffic, industry } = data;
 
   const total = trees + traffic + industry;
@@ -108,7 +110,7 @@ const DistrictPieChart = ({ data, size = 150 }) => {
           {total.toFixed(0)}
         </div>
         <div className="text-xs text-gray-500 uppercase font-medium">
-          Баланс
+          {t('scenario.chartCenterLabel')}
         </div>
       </div>
     </div>
@@ -149,6 +151,7 @@ const ParameterBar = ({ icon: Icon, label, value, maxValue, color, unit = '%' })
 
 // Картка району
 const DistrictCard = ({ districtInfo, parameters, title, isPreview = false }) => {
+  const { t } = useTranslation();
   if (!districtInfo) return null;
 
   const { trees, traffic, industry, residential } = parameters;
@@ -174,35 +177,35 @@ const DistrictCard = ({ districtInfo, parameters, title, isPreview = false }) =>
       <div className="space-y-3">
         <ParameterBar
           icon={TreePine}
-          label="Зелені зони"
+          label={t('scenario.paramGreenAreas')}
           value={trees}
           maxValue={100}
           color="bg-green-500"
-          unit="%"
+          unit={t('scenario.unitPercent')}
         />
         <ParameterBar
           icon={Car}
-          label="Трафік"
+          label={t('scenario.paramTraffic')}
           value={traffic}
           maxValue={100}
           color="bg-orange-500"
-          unit="%"
+          unit={t('scenario.unitPercent')}
         />
         <ParameterBar
           icon={Factory}
-          label="Промзони"
+          label={t('scenario.paramIndustry')}
           value={industry}
           maxValue={50}
           color="bg-slate-600"
-          unit=" зон"
+          unit={t('scenario.unitZones')}
         />
         <ParameterBar
           icon={Users}
-          label="Населення"
+          label={t('scenario.paramPopulation')}
           value={residential}
           maxValue={200}
           color="bg-blue-500"
-          unit="k"
+          unit={t('scenario.unitThousandShort')}
         />
       </div>
     </div>
@@ -211,6 +214,7 @@ const DistrictCard = ({ districtInfo, parameters, title, isPreview = false }) =>
 
 // Слайдер з поточними значеннями
 const ParameterSlider = ({ icon: Icon, label, value, onChange, min, max, step, unit, color, currentValue }) => {
+  const { t } = useTranslation();
   const percentage = ((value - min) / (max - min)) * 100;
   const isNegative = value < 0;
   const zeroPosition = ((0 - min) / (max - min)) * 100;
@@ -229,7 +233,7 @@ const ParameterSlider = ({ icon: Icon, label, value, onChange, min, max, step, u
           <div>
             <span className="font-semibold text-gray-800 block">{label}</span>
             <span className="text-xs text-gray-500">
-              Зараз: <strong>{currentValue.toFixed(0)}{unit}</strong>
+              {t('scenario.sliderCurrentLabel')} <strong>{currentValue.toFixed(0)}{unit}</strong>
             </span>
           </div>
         </div>
@@ -279,7 +283,7 @@ const ParameterSlider = ({ icon: Icon, label, value, onChange, min, max, step, u
       {hasChange && (
         <div className="mt-3 pt-3 border-t border-gray-100">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Результат:</span>
+            <span className="text-gray-600">{t('scenario.sliderResultLabel')}</span>
             <span className="font-bold text-gray-800">
               {currentValue.toFixed(0)}{unit}
               <span className={value > 0 ? 'text-green-600' : 'text-red-600'}>
@@ -296,6 +300,8 @@ const ParameterSlider = ({ icon: Icon, label, value, onChange, min, max, step, u
 
 // AQI індикатор
 const AQIIndicator = ({ aqi, status, change }) => {
+  const { t } = useTranslation();
+
   const getColor = (aqi) => {
     if (aqi <= 50) return 'bg-green-500';
     if (aqi <= 100) return 'bg-yellow-500';
@@ -305,17 +311,12 @@ const AQIIndicator = ({ aqi, status, change }) => {
     return 'bg-red-900';
   };
 
-  // Переклад статусів на українську
-  const translateStatus = (status) => {
-    const translations = {
-      'Good': 'Добра',
-      'Moderate': 'Помірна',
-      'Unhealthy for Sensitive Groups': 'Небезпечна для чутливих груп',
-      'Unhealthy': 'Нездорова',
-      'Very Unhealthy': 'Дуже нездорова',
-      'Hazardous': 'Небезпечна'
-    };
-    return translations[status] || status;
+  const translateStatus = (rawStatus) => {
+    if (!rawStatus) return '';
+    const key = rawStatus
+      .replace(/\s+/g, '_')
+      .replace(/[^A-Za-z0-9_]/g, '');
+    return t(`scenario.aqiStatus.${key}`, rawStatus);
   };
 
   return (
@@ -337,7 +338,7 @@ const AQIIndicator = ({ aqi, status, change }) => {
         </div>
         {change !== 0 && change !== undefined && (
           <div className={`text-sm ${change < 0 ? 'text-green-600' : 'text-red-600'} font-semibold`}>
-            {change < 0 ? '↓ Покращення' : '↑ Погіршення'}
+            {change < 0 ? t('scenario.aqiChangeImproved') : t('scenario.aqiChangeWorsened')}
           </div>
         )}
       </div>
@@ -401,6 +402,8 @@ const PRESET_SCENARIOS = [
 
 // Головний компонент
 const ScenarioModelingPage = () => {
+  const { t } = useTranslation();
+
   const [districts, setDistricts] = useState([]);
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [districtInfo, setDistrictInfo] = useState(null);
@@ -450,20 +453,21 @@ const ScenarioModelingPage = () => {
   }, [selectedDistrict]);
 
   const handleSimulate = async () => {
+    const hasChanges = Object.values(changes).some(v => v !== 0);
     if (!selectedDistrict || !hasChanges) return;
 
     setSimulating(true);
     try {
       const response = await axios.post('http://localhost:5000/api/scenario-modeling/simulate', {
         district_id: selectedDistrict,
-        scenario_name: 'Користувацький сценарій',
+        scenario_name: t('scenario.customScenarioName'),
         changes
       });
 
       setSimulationResult(response.data);
     } catch (error) {
       console.error('Помилка симуляції:', error);
-      alert('Помилка при симуляції сценарію');
+      alert(t('scenario.errorSimulation'));
     } finally {
       setSimulating(false);
     }
@@ -489,7 +493,7 @@ const ScenarioModelingPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <Wind className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-spin" />
-          <p className="text-xl text-gray-600 font-semibold">Завантаження даних...</p>
+          <p className="text-xl text-gray-600 font-semibold">{t('scenario.loading')}</p>
         </div>
       </div>
     );
@@ -521,10 +525,10 @@ const ScenarioModelingPage = () => {
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Сценарне моделювання
+            {t('scenario.title')}
           </h1>
           <p className="text-gray-600 text-lg">
-            Створіть сценарій змін та оцініть вплив на якість повітря
+            {t('scenario.subtitle')}
           </p>
         </div>
 
@@ -532,7 +536,7 @@ const ScenarioModelingPage = () => {
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <label className="block text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
             <Target className="w-5 h-5 text-blue-600" />
-            Крок 1: Оберіть район
+            {t('scenario.step1Title')}
           </label>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {districts.map(district => (
@@ -557,7 +561,7 @@ const ScenarioModelingPage = () => {
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-blue-600" />
-            Крок 2: Оберіть готовий сценарій або налаштуйте вручну
+            {t('scenario.step2Title')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {PRESET_SCENARIOS.map(preset => (
@@ -575,10 +579,10 @@ const ScenarioModelingPage = () => {
                   </div>
                   <div className="text-left">
                     <h3 className="font-bold text-gray-800 mb-1">
-                      {preset.name}
+                      {t(`scenario.presets.${preset.id}.name`, preset.name)}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {preset.description}
+                      {t(`scenario.presets.${preset.id}.description`, preset.description)}
                     </p>
                   </div>
                 </div>
@@ -590,54 +594,54 @@ const ScenarioModelingPage = () => {
         {/* Слайдери */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <h2 className="text-lg font-bold text-gray-800 mb-4">
-            Налаштування параметрів
+            {t('scenario.settingsTitle')}
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ParameterSlider
               icon={TreePine}
-              label="Зелені зони"
+              label={t('scenario.paramGreenAreas')}
               value={changes.trees_change}
               onChange={(v) => setChanges({ ...changes, trees_change: v })}
               min={-50}
               max={50}
               step={5}
-              unit="%"
+              unit={t('scenario.unitPercent')}
               color="bg-emerald-500"
               currentValue={currentParams.trees}
             />
             <ParameterSlider
               icon={Car}
-              label="Трафік"
+              label={t('scenario.paramTraffic')}
               value={changes.traffic_change}
               onChange={(v) => setChanges({ ...changes, traffic_change: v })}
               min={-50}
               max={50}
               step={5}
-              unit="%"
+              unit={t('scenario.unitPercent')}
               color="bg-orange-400"
               currentValue={currentParams.traffic}
             />
             <ParameterSlider
               icon={Factory}
-              label="Промислові зони"
+              label={t('scenario.paramIndustry')}
               value={changes.industry_change}
               onChange={(v) => setChanges({ ...changes, industry_change: v })}
               min={-10}
               max={10}
               step={1}
-              unit=" зон"
+              unit={t('scenario.unitZones')}
               color="bg-slate-500"
               currentValue={currentParams.industry}
             />
             <ParameterSlider
               icon={Users}
-              label="Населення"
+              label={t('scenario.paramPopulation')}
               value={changes.population_change}
               onChange={(v) => setChanges({ ...changes, population_change: v })}
               min={-20000}
               max={20000}
               step={1000}
-              unit=" осіб"
+              unit={t('scenario.unitPeople')}
               color="bg-sky-500"
               currentValue={districtInfo.district.population}
             />
@@ -654,7 +658,7 @@ const ScenarioModelingPage = () => {
                 }`}
             >
               <Play className="w-5 h-5" />
-              {simulating ? 'Розрахунок...' : 'Крок 3: Розрахувати вплив'}
+              {simulating ? t('scenario.btnSimulateLoading') : t('scenario.btnSimulate')}
             </button>
             <button
               onClick={handleReset}
@@ -662,7 +666,7 @@ const ScenarioModelingPage = () => {
               className="px-6 py-4 rounded-xl font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <RotateCcw className="w-5 h-5" />
-              Скинути
+              {t('scenario.btnReset')}
             </button>
           </div>
         </div>
@@ -672,19 +676,19 @@ const ScenarioModelingPage = () => {
           <div className="bg-white rounded-xl shadow-xl p-8 space-y-8">
 
             <h2 className="text-3xl font-bold text-gray-800 text-center mb-8">
-              Результати моделювання
+              {t('scenario.resultsTitle')}
             </h2>
 
             {/* Візуалізація змін */}
             <div>
               <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">
-                Порівняння станів району
+                {t('scenario.compareTitle')}
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
                 <DistrictCard
                   districtInfo={districtInfo}
                   parameters={currentParams}
-                  title="Поточний стан"
+                  title={t('scenario.currentStateTitle')}
                 />
 
                 <div className="flex justify-center">
@@ -694,7 +698,7 @@ const ScenarioModelingPage = () => {
                 <DistrictCard
                   districtInfo={districtInfo}
                   parameters={predictedParams}
-                  title="Прогнозований стан"
+                  title={t('scenario.predictedStateTitle')}
                   isPreview={true}
                 />
               </div>
@@ -703,11 +707,11 @@ const ScenarioModelingPage = () => {
             {/* AQI */}
             <div className="border-t pt-8">
               <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">
-                Вплив на якість повітря
+                {t('scenario.airImpactTitle')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 <div className="text-center p-6 bg-gray-50 rounded-xl">
-                  <div className="text-sm text-gray-600 mb-4 font-semibold">Поточний AQI</div>
+                  <div className="text-sm text-gray-600 mb-4 font-semibold">{t('scenario.currentAQITitle')}</div>
                   <div className="flex justify-center">
                     <AQIIndicator
                       aqi={simulationResult.current_state.air_quality.aqi}
@@ -717,7 +721,7 @@ const ScenarioModelingPage = () => {
                   </div>
                 </div>
                 <div className="text-center p-6 bg-gray-50 rounded-xl">
-                  <div className="text-sm text-gray-600 mb-4 font-semibold">Прогнозований AQI</div>
+                  <div className="text-sm text-gray-600 mb-4 font-semibold">{t('scenario.predictedAQITitle')}</div>
                   <div className="flex justify-center">
                     <AQIIndicator
                       aqi={simulationResult.predicted_state.air_quality.aqi}
@@ -742,12 +746,18 @@ const ScenarioModelingPage = () => {
                     <h4 className={`font-bold text-xl mb-2 ${simulationResult.summary.overall_improvement ? 'text-green-800' : 'text-red-800'
                       }`}>
                       {simulationResult.summary.overall_improvement
-                        ? '✅ Покращення якості повітря'
-                        : '⚠️ Погіршення якості повітря'}
+                        ? t('scenario.overallImprovedTitle')
+                        : t('scenario.overallWorsenedTitle')}
                     </h4>
                     <p className="text-gray-700">
-                      Покращено <strong>{simulationResult.summary.improved_pollutants.length} з 6</strong> параметрів.
-                      Безпечних: <strong>{simulationResult.summary.safe_pollutants_count}/6</strong>
+                      {t('scenario.summaryImproved', {
+                        improved: simulationResult.summary.improved_pollutants.length,
+                        total: 6
+                      })}{' '}
+                      {t('scenario.summarySafe', {
+                        safe: simulationResult.summary.safe_pollutants_count,
+                        total: 6
+                      })}
                     </p>
                   </div>
                 </div>
@@ -757,7 +767,7 @@ const ScenarioModelingPage = () => {
             {/* Детальний аналіз */}
             <div className="border-t pt-8">
               <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">
-                Детальний аналіз параметрів
+                {t('scenario.detailedAnalysisTitle')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.entries(simulationResult.impact_analysis).map(([key, data]) => (
@@ -765,7 +775,7 @@ const ScenarioModelingPage = () => {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h4 className="font-bold text-gray-800 uppercase">{key}</h4>
-                        <p className="text-xs text-gray-500">Поріг: {data.threshold} μg/m³</p>
+                        <p className="text-xs text-gray-500">{t('scenario.thresholdLabel')} {data.threshold} μg/m³</p>
                       </div>
                       <div className={`px-2 py-1 rounded-full text-xs font-bold ${data.improvement ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                         }`}>
@@ -774,23 +784,23 @@ const ScenarioModelingPage = () => {
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Зараз:</span>
+                        <span className="text-gray-600">{t('scenario.currentLabel')}</span>
                         <span className="font-bold">{data.current.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Прогноз:</span>
+                        <span className="text-gray-600">{t('scenario.predictedLabel')}</span>
                         <span className="font-bold">{data.predicted.toFixed(2)}</span>
                       </div>
                       <div className="pt-2 border-t flex items-center gap-2 text-xs">
                         {data.will_be_safe ? (
                           <>
                             <CheckCircle className="w-4 h-4 text-green-600" />
-                            <span className="text-green-600 font-semibold">Безпечно</span>
+                            <span className="text-green-600 font-semibold">{t('scenario.safeLabel')}</span>
                           </>
                         ) : (
                           <>
                             <AlertCircle className="w-4 h-4 text-red-600" />
-                            <span className="text-red-600 font-semibold">Перевищує норму</span>
+                            <span className="text-red-600 font-semibold">{t('scenario.aboveNormLabel')}</span>
                           </>
                         )}
                       </div>

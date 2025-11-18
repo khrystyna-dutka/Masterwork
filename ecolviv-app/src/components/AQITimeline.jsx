@@ -2,9 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
-// Компонент для однієї дня
+// Компонент для одного дня
 const DayCard = ({ date, aqi, status, isPast, isCurrent, isFuture, trend }) => {
+  const { t } = useTranslation();
+
   const getColor = (aqi) => {
     if (aqi <= 50) return 'bg-green-500';
     if (aqi <= 100) return 'bg-yellow-500';
@@ -21,16 +24,23 @@ const DayCard = ({ date, aqi, status, isPast, isCurrent, isFuture, trend }) => {
     return 'text-red-700';
   };
 
-  const translateStatus = (status) => {
-    const translations = {
-      'Good': 'Добра',
-      'Moderate': 'Помірна',
-      'Unhealthy for Sensitive Groups': 'Нездорова для чутливих',
-      'Unhealthy': 'Нездорова',
-      'Very Unhealthy': 'Дуже нездорова',
-      'Hazardous': 'Небезпечна'
-    };
-    return translations[status] || status;
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'Good':
+        return t('aqiTimeline.status.good');
+      case 'Moderate':
+        return t('aqiTimeline.status.moderate');
+      case 'Unhealthy for Sensitive Groups':
+        return t('aqiTimeline.status.unhealthySensitive');
+      case 'Unhealthy':
+        return t('aqiTimeline.status.unhealthy');
+      case 'Very Unhealthy':
+        return t('aqiTimeline.status.veryUnhealthy');
+      case 'Hazardous':
+        return t('aqiTimeline.status.hazardous');
+      default:
+        return status;
+    }
   };
 
   const getTrendIcon = () => {
@@ -41,10 +51,11 @@ const DayCard = ({ date, aqi, status, isPast, isCurrent, isFuture, trend }) => {
   };
 
   const formatDate = (dateStr) => {
-    const d = new Date(dateStr + 'T12:00:00'); // Додаємо час щоб уникнути timezone проблем
-    const days = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-    const months = ['січ', 'лют', 'бер', 'кві', 'тра', 'чер', 'лип', 'сер', 'вер', 'жов', 'лис', 'гру'];
-    
+    const d = new Date(dateStr + 'T12:00:00');
+
+    const days = t('date.daysShort', { returnObjects: true });
+    const months = t('date.monthsShort', { returnObjects: true });
+
     return {
       day: days[d.getDay()],
       date: `${d.getDate()} ${months[d.getMonth()]}`
@@ -54,13 +65,14 @@ const DayCard = ({ date, aqi, status, isPast, isCurrent, isFuture, trend }) => {
   const formattedDate = formatDate(date);
 
   return (
-    <div className={`relative bg-white rounded-xl p-4 shadow-md border-2 transition-all duration-300 
+    <div
+      className={`relative bg-white rounded-xl p-4 shadow-md border-2 transition-all duration-300 
       ${isCurrent ? 'border-blue-500 shadow-lg scale-105' : 'border-gray-200'}
-      ${isPast ? 'opacity-70' : ''}`}>
-      
+      ${isPast ? 'opacity-70' : ''}`}
+    >
       {isCurrent && (
         <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
-          Сьогодні
+          {t('aqiTimeline.todayBadge')}
         </div>
       )}
       
@@ -86,7 +98,7 @@ const DayCard = ({ date, aqi, status, isPast, isCurrent, isFuture, trend }) => {
       
       <div className="text-center">
         <div className={`text-sm font-bold ${getTextColor(aqi)}`}>
-          {translateStatus(status)}
+          {getStatusLabel(status)}
         </div>
       </div>
     </div>
@@ -95,6 +107,8 @@ const DayCard = ({ date, aqi, status, isPast, isCurrent, isFuture, trend }) => {
 
 // Головний компонент Timeline
 const AQITimeline = ({ districtId }) => {
+  const { t } = useTranslation();
+
   const [timelineData, setTimelineData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -143,14 +157,14 @@ const AQITimeline = ({ districtId }) => {
         }
       } catch (err) {
         console.error('❌ Помилка завантаження тижневого прогнозу:', err);
-        setError('Не вдалося завантажити прогноз');
+        setError(t('aqiTimeline.errorLoad'));
       } finally {
         setLoading(false);
       }
     };
 
     loadWeeklyForecast();
-  }, [districtId]);
+  }, [districtId, t]);
 
   if (loading) {
     return (
@@ -176,7 +190,7 @@ const AQITimeline = ({ districtId }) => {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="text-center py-8 text-gray-600">
-          Немає даних для відображення
+          {t('aqiTimeline.noData')}
         </div>
       </div>
     );
@@ -187,7 +201,7 @@ const AQITimeline = ({ districtId }) => {
       <div className="mb-6">
         <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <Calendar className="w-6 h-6 text-blue-600" />
-          Тижневий прогноз якості повітря
+          {t('aqiTimeline.title')}
         </h3>
       </div>
       
@@ -201,15 +215,19 @@ const AQITimeline = ({ districtId }) => {
         <div className="flex items-start gap-3">
           <div className="text-blue-600 mt-0.5">
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clipRule="evenodd"
+              />
             </svg>
           </div>
           <div>
             <p className="text-sm text-blue-900 font-semibold mb-1">
-              Прогноз базується на історичних трендах
+              {t('aqiTimeline.infoTitle')}
             </p>
             <p className="text-xs text-blue-700">
-              Минулі дні - реальні середні значення. Майбутні дні - прогноз на основі поточного стану та тренду.
+              {t('aqiTimeline.infoText')}
             </p>
           </div>
         </div>

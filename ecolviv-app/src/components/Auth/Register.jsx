@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
+import { useTranslation } from 'react-i18next';
 
 const Register = ({ setCurrentPage }) => {
   const { register, error } = useAuth();
+  const { t } = useTranslation();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -35,33 +37,33 @@ const Register = ({ setCurrentPage }) => {
     const errors = {};
 
     if (!formData.email) {
-      errors.email = 'Email обов\'язковий';
+      errors.email = t('auth.validation.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Невірний формат email';
+      errors.email = t('auth.validation.emailInvalid');
     }
 
     if (!formData.password) {
-      errors.password = 'Пароль обов\'язковий';
+      errors.password = t('auth.validation.passwordRequired');
     } else if (formData.password.length < 6) {
-      errors.password = 'Пароль має містити мінімум 6 символів';
+      errors.password = t('auth.validation.passwordMinLength');
     } else if (!/\d/.test(formData.password)) {
-      errors.password = 'Пароль має містити хоча б одну цифру';
+      errors.password = t('auth.validation.passwordMustContainDigit');
     }
 
     if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Підтвердження пароля обов\'язкове';
+      errors.confirmPassword = t('auth.validation.confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Паролі не співпадають';
+      errors.confirmPassword = t('auth.validation.passwordsDoNotMatch');
     }
 
     if (!formData.full_name) {
-      errors.full_name = 'Повне ім\'я обов\'язкове';
+      errors.full_name = t('auth.validation.fullNameRequired');
     } else if (formData.full_name.length < 2) {
-      errors.full_name = 'Ім\'я має містити мінімум 2 символи';
+      errors.full_name = t('auth.validation.fullNameMinLength');
     }
 
     if (formData.phone && !/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(formData.phone)) {
-      errors.phone = 'Невірний формат телефону';
+      errors.phone = t('auth.validation.phoneInvalid');
     }
 
     return errors;
@@ -89,8 +91,10 @@ const Register = ({ setCurrentPage }) => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Реєстрація в EcoLviv</h2>
-        <p className="auth-subtitle">Створіть свій обліковий запис</p>
+        <h2>{t('auth.registerTitle')}</h2>
+        <p className="auth-subtitle">
+          {t('auth.registerSubtitle')}
+        </p>
 
         {error && (
           <div className="auth-error">
@@ -100,7 +104,9 @@ const Register = ({ setCurrentPage }) => {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="full_name">Повне ім'я *</label>
+            <label htmlFor="full_name">
+              {t('auth.fullNameLabel')}
+            </label>
             <input
               type="text"
               id="full_name"
@@ -108,7 +114,7 @@ const Register = ({ setCurrentPage }) => {
               value={formData.full_name}
               onChange={handleChange}
               className={validationErrors.full_name ? 'error' : ''}
-              placeholder="Іван Іванов"
+              placeholder={t('auth.fullNamePlaceholder')}
               disabled={loading}
             />
             {validationErrors.full_name && (
@@ -117,7 +123,10 @@ const Register = ({ setCurrentPage }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email *</label>
+            <label htmlFor="email">
+              {t('auth.emailLabel')}
+              {' '}*
+            </label>
             <input
               type="email"
               id="email"
@@ -125,7 +134,7 @@ const Register = ({ setCurrentPage }) => {
               value={formData.email}
               onChange={handleChange}
               className={validationErrors.email ? 'error' : ''}
-              placeholder="example@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               disabled={loading}
             />
             {validationErrors.email && (
@@ -134,7 +143,9 @@ const Register = ({ setCurrentPage }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="phone">Телефон (опціонально)</label>
+            <label htmlFor="phone">
+              {t('auth.phoneLabel')}
+            </label>
             <input
               type="tel"
               id="phone"
@@ -142,7 +153,7 @@ const Register = ({ setCurrentPage }) => {
               value={formData.phone}
               onChange={handleChange}
               className={validationErrors.phone ? 'error' : ''}
-              placeholder="+380501234567"
+              placeholder={t('auth.phonePlaceholder')}
               disabled={loading}
             />
             {validationErrors.phone && (
@@ -151,7 +162,9 @@ const Register = ({ setCurrentPage }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Пароль *</label>
+            <label htmlFor="password">
+              {t('auth.passwordLabel')} *
+            </label>
             <input
               type="password"
               id="password"
@@ -159,7 +172,7 @@ const Register = ({ setCurrentPage }) => {
               value={formData.password}
               onChange={handleChange}
               className={validationErrors.password ? 'error' : ''}
-              placeholder="••••••••"
+              placeholder={t('auth.passwordPlaceholder')}
               disabled={loading}
             />
             {validationErrors.password && (
@@ -168,7 +181,9 @@ const Register = ({ setCurrentPage }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Підтвердження пароля *</label>
+            <label htmlFor="confirmPassword">
+              {t('auth.confirmPasswordLabel')}
+            </label>
             <input
               type="password"
               id="confirmPassword"
@@ -176,7 +191,7 @@ const Register = ({ setCurrentPage }) => {
               value={formData.confirmPassword}
               onChange={handleChange}
               className={validationErrors.confirmPassword ? 'error' : ''}
-              placeholder="••••••••"
+              placeholder={t('auth.passwordPlaceholder')}
               disabled={loading}
             />
             {validationErrors.confirmPassword && (
@@ -189,18 +204,18 @@ const Register = ({ setCurrentPage }) => {
             className="auth-button"
             disabled={loading}
           >
-            {loading ? 'Реєстрація...' : 'Зареєструватися'}
+            {loading ? t('auth.registerButtonLoading') : t('auth.registerButton')}
           </button>
         </form>
 
         <div className="auth-footer">
           <p>
-            Вже є акаунт?{' '}
+            {t('auth.alreadyHaveAccountText')}{' '}
             <button 
               onClick={() => setCurrentPage('login')}
               className="auth-link"
             >
-              Увійти
+              {t('auth.loginLink')}
             </button>
           </p>
         </div>

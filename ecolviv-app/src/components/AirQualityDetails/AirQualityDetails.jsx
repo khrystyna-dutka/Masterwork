@@ -1,14 +1,17 @@
 // src/components/AirQualityDetails/AirQualityDetails.jsx
 import React from 'react';
 import './AirQualityDetails.css';
+import { useTranslation } from 'react-i18next';
 
 const AirQualityDetails = ({ district }) => {
+  const { t } = useTranslation();
+
   const pollutants = [
     {
       name: 'PM2.5',
       value: district.pm25,
       unit: 'μg/m³',
-      description: 'Дрібні частинки',
+      description: t('airQualityDetails.pollutants.pm25.description'),
       icon: '🔬',
       thresholds: { good: 12, moderate: 35.4, unhealthy: 55.4 }
     },
@@ -16,7 +19,7 @@ const AirQualityDetails = ({ district }) => {
       name: 'PM10',
       value: district.pm10,
       unit: 'μg/m³',
-      description: 'Великі частинки',
+      description: t('airQualityDetails.pollutants.pm10.description'),
       icon: '💨',
       thresholds: { good: 54, moderate: 154, unhealthy: 254 }
     },
@@ -24,7 +27,7 @@ const AirQualityDetails = ({ district }) => {
       name: 'NO₂',
       value: district.no2,
       unit: 'μg/m³',
-      description: 'Діоксид азоту',
+      description: t('airQualityDetails.pollutants.no2.description'),
       icon: '🚗',
       thresholds: { good: 40, moderate: 90, unhealthy: 120 }
     },
@@ -32,7 +35,7 @@ const AirQualityDetails = ({ district }) => {
       name: 'SO₂',
       value: district.so2,
       unit: 'μg/m³',
-      description: 'Діоксид сірки',
+      description: t('airQualityDetails.pollutants.so2.description'),
       icon: '🏭',
       thresholds: { good: 20, moderate: 80, unhealthy: 250 }
     },
@@ -40,7 +43,7 @@ const AirQualityDetails = ({ district }) => {
       name: 'CO',
       value: district.co,
       unit: 'μg/m³',
-      description: 'Чадний газ',
+      description: t('airQualityDetails.pollutants.co.description'),
       icon: '⚠️',
       thresholds: { good: 4400, moderate: 9400, unhealthy: 12400 }
     },
@@ -48,7 +51,7 @@ const AirQualityDetails = ({ district }) => {
       name: 'O₃',
       value: district.o3,
       unit: 'μg/m³',
-      description: 'Озон',
+      description: t('airQualityDetails.pollutants.o3.description'),
       icon: '☀️',
       thresholds: { good: 60, moderate: 100, unhealthy: 140 }
     }
@@ -56,27 +59,32 @@ const AirQualityDetails = ({ district }) => {
 
   const getStatus = (value, thresholds) => {
     if (value <= thresholds.good) {
-      return { label: 'Добре', color: '#10b981' };
+      return { label: t('airQualityDetails.status.good'), color: '#10b981' };
     } else if (value <= thresholds.moderate) {
-      return { label: 'Помірно', color: '#f59e0b' };
+      return { label: t('airQualityDetails.status.moderate'), color: '#f59e0b' };
     } else if (value <= thresholds.unhealthy) {
-      return { label: 'Нездорово', color: '#ef4444' };
+      return { label: t('airQualityDetails.status.unhealthy'), color: '#ef4444' };
     } else {
-      return { label: 'Небезпечно', color: '#991b1b' };
+      return { label: t('airQualityDetails.status.hazardous'), color: '#991b1b' };
     }
   };
 
   return (
     <div className="air-quality-details">
       <div className="details-header">
-        <h3>Детальні показники для району {district.name}</h3>
+        <h3>
+          {t('airQualityDetails.headerTitle', { name: district.name })}
+        </h3>
         {district.timestamp && (
           <p className="update-time">
-            Оновлено: {new Date(district.timestamp).toLocaleString('uk-UA')}
+            {t('airQualityDetails.updatedAt')}{' '}
+            {new Date(district.timestamp).toLocaleString('uk-UA')}
           </p>
         )}
         {district.source && (
-          <p className="data-source">Джерело: {district.source}</p>
+          <p className="data-source">
+            {t('airQualityDetails.dataSource')} {district.source}
+          </p>
         )}
       </div>
 
@@ -122,13 +130,23 @@ const AirQualityDetails = ({ district }) => {
       </div>
 
       <div className="info-section">
-        <h4>ℹ️ Інформація про показники</h4>
+        <h4>{t('airQualityDetails.infoTitle')}</h4>
         <ul>
-          <li><strong>PM2.5 і PM10</strong> - тверді частинки в повітрі від транспорту та промисловості</li>
-          <li><strong>NO₂</strong> - утворюється при спалюванні палива в автомобілях</li>
-          <li><strong>SO₂</strong> - викиди промислових підприємств</li>
-          <li><strong>CO</strong> - чадний газ, утворюється при неповному згорянні</li>
-          <li><strong>O₃</strong> - приземний озон, утворюється під дією сонця</li>
+          <li>
+            <strong>PM2.5 і PM10</strong> — {t('airQualityDetails.info.pm')}
+          </li>
+          <li>
+            <strong>NO₂</strong> — {t('airQualityDetails.info.no2')}
+          </li>
+          <li>
+            <strong>SO₂</strong> — {t('airQualityDetails.info.so2')}
+          </li>
+          <li>
+            <strong>CO</strong> — {t('airQualityDetails.info.co')}
+          </li>
+          <li>
+            <strong>O₃</strong> — {t('airQualityDetails.info.o3')}
+          </li>
         </ul>
       </div>
     </div>
